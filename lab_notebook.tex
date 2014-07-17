@@ -1,0 +1,414 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Daily Laboratory Book
+% LaTeX Template
+%
+% This template has been downloaded from:
+% http://www.latextemplates.com
+%
+% Original author:
+% Frank Kuster (http://www.ctan.org/tex-archive/macros/latex/contrib/labbook/)
+%
+% Important note:
+% This template requires the labbook.cls file to be in the same directory as the
+% .tex file. The labbook.cls file provides the necessary structure to create the
+% lab book.
+%
+% The \lipsum[#] commands throughout this template generate dummy text
+% to fill the template out. These commands should all be removed when 
+% writing lab book content.
+%
+% HOW TO USE THIS TEMPLATE 
+% Each day in the lab consists of three main things:
+%
+% 1. LABDAY: The first thing to put is the \labday{} command with a date in 
+% curly brackets, this will make a new page and put the date in big letters 
+% at the top.
+%
+% 2. EXPERIMENT: Next you need to specify what experiment(s) you are 
+% working on with an \experiment{} command with the experiment shorthand 
+% in the curly brackets. The experiment shorthand is defined in the 
+% 'DEFINITION OF EXPERIMENTS' section below, this means you can 
+% say \experiment{pcr} and the actual text written to the PDF will be what 
+% you set the 'pcr' experiment to be. If the experiment is a one off, you can 
+% just write it in the bracket without creating a shorthand. Note: if you don't 
+% want to have an experiment, just leave this out and it won't be printed.
+%
+% 3. CONTENT: Following the experiment is the content, i.e. what progress 
+% you made on the experiment that day.
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%----------------------------------------------------------------------------------------
+%	PACKAGES AND OTHER DOCUMENT CONFIGURATIONS
+%----------------------------------------------------------------------------------------
+
+\documentclass[idxtotoc,hyperref,openany,oneside]{labbook} % 'openany' here removes the gap page between days, erase it to restore this gap; 'oneside' can also be added to remove the shift that odd pages have to the right for easier reading
+
+\usepackage[ 
+  backref=page,
+  pdfpagelabels=true,
+  plainpages=false,
+  colorlinks=true,
+  bookmarks=true,
+  pdfview=FitB]{hyperref} % Required for the hyperlinks within the PDF
+  
+\usepackage{booktabs} % Required for the top and bottom rules in the table
+\usepackage{float} % Required for specifying the exact location of a figure or table
+\usepackage{graphicx} % Required for including images
+\usepackage{mathpazo} % add possibly `sc` and `osf` options
+\usepackage{eulervm}
+
+\newcommand{\HRule}{\rule{\linewidth}{0.5mm}} % Command to make the lines in the title page
+\setlength\parindent{0pt} % Removes all indentation from paragraphs
+
+%----------------------------------------------------------------------------------------
+%	DEFINITION OF EXPERIMENTS
+%----------------------------------------------------------------------------------------
+
+\newexperiment{data_management}{Data management.}
+\newexperiment{variant_calling}{Variant calling.}
+\newexperiment{masked_genomes}{Making masked genomes.}
+\newexperiment{phasing}{Phasing variants.}
+\newexperiment{recombination}{Generating recombination map.}
+%\newexperiment{shorthand}{Description of the experiment}
+
+%---------------------------------------------------------------------------------------
+
+\begin{document}
+
+%----------------------------------------------------------------------------------------
+%	TITLE PAGE
+%----------------------------------------------------------------------------------------
+
+\frontmatter % Use Roman numerals for page numbers
+\title{
+\begin{center}
+\HRule \\[0.4cm]
+{\Huge \bfseries Lab Notebook \\[0.5cm] \Large Postdoctoral Research}\\[0.4cm] % Degree
+\HRule \\[1.5cm]
+\end{center}
+}
+\author{\Huge Sonal Singhal \\ \\ \LARGE sonal.singhal1@gmail.com \\[2cm]} % Your name and email address
+\date{Beginning 7 July 2014} % Beginning date
+\maketitle
+
+\tableofcontents
+
+\mainmatter % Use Arabic numerals for page numbers
+
+%----------------------------------------------------------------------------------------
+%	LAB BOOK CONTENTS
+%----------------------------------------------------------------------------------------
+
+% Blank template to use for new days:
+
+%\labday{Day, Date Month Year}
+
+%\experiment{}
+
+%Text
+
+%-----------------------------------------
+
+%\experiment{}
+
+%Text
+
+%----------------------------------------------------------------------------------------
+
+\labday{Monday, 7 July 2014}
+
+\experiment{variant_calling}
+After talking with Molly, I looked at the weird peaky behavior of VQSR filter scores for long-tailed and double barred finch. All the weird peaks could be attributed to variants that were fixed or nearly fixed. \\
+
+Also, I wrote code \verb count_triallelic_sites.py  to look at multi-allelic sites in long-tailed finch. It turns out that a significant portion of these sites are actually bi-allelic because the reference allele (or, the zebrafinch allele) is not at all represented.
+
+\experiment{data_management}
+Issues with the \verb /KG/  drive continued. Started to migrate data off and explored ways to make one centralized repository for data. See emails with John Zekos for information on what happened and how to avoid it.
+
+\labday{Tuesday, 8 July 2014}
+
+\experiment{data_management}
+All data but a bare minimum of final VCF files was moved off the Columbia server. BAM files for doublebarred finch and longtailed finch were moved off the \verb /KG/ drive and onto my more secure home drive.
+
+\experiment{variant_calling}
+Looking at the multiallelic sites in longtailed finch found the following:
+\begin{itemize}
+\item 3.52\% of LTF variable sites have 2 or more alternate alleles reported.
+\item 1.34\% of LTF variable sites have 2 or more alternate alleles reported, but only 2 of the alleles were genotyped individuals -- i.e., no individuals had the reference allele.
+\item 2.18\% of LTF variable sites are sites that are truly multiallelic.
+\end{itemize}
+
+\experiment{masked_genomes}
+Each run of the script \texttt{make\_masked\_genomes.py} produces two files, the masked genome and a summary file that tells the user how many of each site type was produced. This information is best summarized in the README, a portion of which is duplicated here. \\
+
+\begin{verbatim}
+The masked genome is represented as a FASTA file with each site given as a numeric, mutually exclusive category (0 to 7). 
+
+The sites are coded as following:  
+0: coverage within acceptable bounds; no variation  
+1: coverage within acceptable bounds; variant that is HQ and no evidence of Mendelian distortion 
+2: coverage within acceptable bounds; variant that is HQ and has evidence of Mendelian distortion 
+3: coverage within acceptable bounds; variant that is low quality  
+4: unacceptable coverage; no variation  
+5: unacceptable coverage; variant that is HQ and no evidence of Mendelian distortion  
+6: unacceptable coverage; variant that is HQ and has evidence of Mendelian distortion 
+7: unacceptable coverage; variant that is low quality  
+
+Summing sites falling in categories 0 to 3 gives an estimate of total callable sites. Summing sites 0 to 7 will give the total sequence length. The filtered VCFs include sites in categories 1, 2, and 5.
+\end{verbatim}
+
+I had made the doublebarred finch masked genome earlier last week. These were the files used.
+\begin{verbatim}
+vcf_file = '/mnt/lustre/home/sonal.singhal1/DBF/after_vqsr/DB.allchrs.vqsr.snps.indels.vcf.gz'
+cov_summary = '/mnt/lustre/home/sonal.singhal1/DBF/masked_genome/doublebarred_depth_summary.txt'
+cov_data = '/mnt/lustre/home/sonal.singhal1/DBF/masked_genome/doublebarred_avg_depth.txt'
+mendel_file = \"\"
+\end{verbatim}
+
+These are the files used to make the zebrafinch masked genome.
+\begin{verbatim}
+vcf_file = '/mnt/gluster/home/emleffler/genotype_callsets/zebrafinch/zf_unrels/unified_genotyper/after_vqsr/gatk.ug.unrelzf.allchrs.snps.indels.vqsr2.vcf.gz'
+cov_summary = '/mnt/lustre/home/sonal.singhal1/ZF/masked_genome/zebrafinch_depth_summary.txt'
+cov_data = '/mnt/lustre/home/sonal.singhal1/ZF/masked_genome/zebrafinch_avg_depth.txt'
+mendel_file = '/mnt/gluster/home/emleffler/genotype_callsets/zebrafinch/zf_family/unified_genotyper/after_vqsr/mendelian_errors/gatk.ug.MP1-5.allchrs.vqsr.filtered.allsites.with.errors.positions'
+\end{verbatim}
+Note that in zebrafinch, coverage was based on unrelated individuals only, because related individuals were sequenced to higher depth. Also, in the same vein, only variants from the unrelated were considered. Is this going to be a problem?
+
+These are the files used to make the longtailed masked genome.
+\begin{verbatim}
+vcf_file = '/mnt/gluster/home/emleffler/genotype_callsets/longtailedfinch/after_vqsr/gatk.ug.ltf.allchrs.snps.indels.vqsr2.vcf.gz'
+cov_data = '/mnt/lustre/home/sonal.singhal1/LTF/masked_genome/longtailed_avg_depth.txt'
+cov_summary = '/mnt/lustre/home/sonal.singhal1/LTF/masked_genome/longtailed_depth_summary.txt'
+mendel_file = ''
+\end{verbatim}
+
+\experiment{phasing}
+To phase these chromosomes, we are going to use ShapeIt, first using their feature that lets you determine phase-informative reads (PIR) -- these are mate-pairs that span two heterozygous sites. They tell you phase. Cool idea. However, to do this, we need VCFs that include SNPs and indels and that are by chromosome, and in this case, are also filtered by callable sites. \\
+
+To do this:
+\begin{enumerate}
+\item Frustratingly, some VCFs are ordered by chromosome number (Chr1, Chr1A, Chr1B, etc) whereas others are ordered \"alphabetically\" (Chr10, Chr11, etc). This makes GATK and a number of programs unhappy, so the first thing I did was take a genome ordered alphabetically and create sequence dict and index files, using Picard and samtools respectively.
+\item Then, it turns out that we didn't have a filtered VCF file for LTF that combined across both SNPs and indels and across the chromosomes. So, I wrote a little script \texttt{filtered\_variants.py} that I used to pick out variable passing sites from the full genomic, all quality VCF from Ellen.
+\item Then, I wrote a script that borrows from \texttt{make\_masked\_genome.py} and creates a VCF without inappropriate coverage (higher than 2$\times$, lower than 0.5$\times$ average genomic coverage) and splits it across chromosomes.
+\end{enumerate}
+
+
+\labday{Wednesday, 9 July 2014}
+
+\experiment{masked_genomes}
+It looks like all my masking of genomes has worked and that it is finally completed. Hurray! I put the README in each of the \texttt{masked\_genome} folders and sent out the info to the group. Also, I copied the LTF directory to Columbia for Alva. Note that adding categories 0 through 3 gives the effective sequence length, which will be crucial for all other analyses. \\
+
+To determine the final call sets, I took the (until that point) most final call set and removed sites with very low or very high coverage using the script \texttt{make\_vcf\_filtered\_for\_coverage\_by\_chr.py}. The VCFs used were the following:
+\begin{itemize}
+\item LTF: \texttt{/mnt/lustre/home/sonal.singhal1/LTF/after\_vqsr/gatk.ug.ltf.allchrs.allvar.filtered.vqsr.vcf.gz}
+\begin{itemize}
+\item Note: I had to create this VCF, because for whatever reason, it did not exist already.
+\item I created it using \texttt{filtered\_variants.py} on \texttt{/mnt/gluster/home/emleffler/genotype\_callsets/longtailedfinch/after\_vqsr/gatk.ug.ltf.allchrs.snps.indels.vqsr2.vcf.gz}.
+\end{itemize}
+\item  ZF: \texttt{/mnt/gluster/home/emleffler/genotype\_callsets/zebrafinch/zf\_unrels/unified\_genotyper/after\_vqsr
+/gatk.ug.unrelzf.allchrs.snps.indels.vqsr2.filtered.nomendel.recode.vcf.gz
+}
+\end{itemize}
+
+
+\labday{Thursday, 10 July 2014}
+
+\experiment{phasing}
+I started my phasing experiments. There are four main ways that I could phase. 
+\begin{enumerate}
+\item by using PIRs in ShapeIt and then LDhelmet
+\item by using family information in ShapeIt and then LDhelmet
+\item by using PIRs and family information in ShapeIt and then LDhelmet (is this even possible??)
+\item by using LDhat straight away
+\end{enumerate}
+
+I am going to pursue approaches 1 and 4 first, because I am still trying to figure out how to implement approach 3 and approach 2 seems like it would be less informative. Also, SNP calling for approach 2 was weird, and I am still getting my head around that. \\
+
+In order to do approach 1, I got messed up by the extractPIRs program, but after some trial and error, I found:
+\begin{itemize}
+\item the pre-compiled version of extractPIRs works great; compiling on servers is hard because their version of g++ etc is so outdated
+\item you cannot have indels in the VCF file
+\item you cannot have non-biallelic SNPs in the VCF file
+\item VCFs have to be separated by chromosome
+\item although some of our multiallelic SNPs are really biallelic, I decided to just drop them, because keeping them would require recoding the VCF, which seems inadvisable
+\item I filtered the VCF files by using the script \texttt{remove\_multialleles\_indels.py}
+\item I really wanted to have proper BAM files for PIR calling, because it uses mate pair info. Due to the data problems, I didn't have one for LTF sample G118. I replicated KS's and EL's commands on LTF and moved forward with that.
+\item It turns out that ZF bam files and SNP calls are given two separate IDs, the intersection of which is in my local dir \texttt{/Users/singhal/zebrafinch/samples/zf\_ids.txt}. Why would you do this?
+\end{itemize}
+
+ShapeIT needs the BAM files to be indexed, so I did that, but it looks like G294 is truncated. So, copied that over again and indexed it, too. \\
+
+I also realized that the ShapeIt program automatically defaults to $N_e$ and $\rho$ values for humans, which don't seem advisable for these birdies. So, I am going to do some work to approximate these values for birds. \\
+
+Let's start with $N_e$. The easiest way to get a proxy estimate for $N_e$ is to infer $\theta$ and to hope that the mutation rate estimate is reasonable. I looked through some papers, and the zebrafinch mutation rate has been reported as $2.21 \times 10^{-9} \frac{mutations}{site \cdot year}$ (Nam et al 2010; doi:10.1186/gb-2010-11-6-r68) and $2.95 \times 10^{-9} \frac{mutations}{site \cdot year}$ (Balakrishnan and Edwards; doi: 10.1534/genetics.108.094250). Zebrafinch have 3 - 4 generations a year, which means the per generation mutation rate is incredibly low -- on the order of $7 \times 10^{-10} \frac{mutations}{bp \cdot generation}$. This paper (Ksepka et al. 2014; dx.doi.org/10.1098/rspb.2014.0677) suggests these estimates tend to predict much older divergence times than fossils, which makes me wonder if these mutation rates are downwardly biased. Plus, they are all based on the Zink calibration for mitochondrial rates, which I really wouldn't trust. \\
+
+Anyways, I am going to go from $\theta$ estimates to $N_e$ using Watterson's theta, so I need to calculate the number of segregating sites. (The VCF includes fixed sites and indels, which aren't appropriate for inclusion.) I wrote a script called \texttt{calculate\_segregating\_sites.py}.
+
+
+\labday{Friday, 11 July 2014}
+
+\experiment{data_management}
+I lost most of the day to moving files around. I have ~1 TB of space on the \texttt{/mnt/lustre/} drive and ~1 TB of space on the \texttt{/mnt/glustre/} drive. That should be enough for everything, though it is definitely not ideal to have things spread out. \\
+
+This is getting super annoying. This lab notebook is also starting to sound like a teenage diary.
+
+\experiment{phasing}
+I started my phasing experiments. There are four main ways that I could phase. 
+\begin{enumerate}
+\item by using PIRs in ShapeIt and then LDhelmet
+\item by using family information in ShapeIt and then LDhelmet
+	\begin{enumerate}
+	\item I really cannot make sense of how this was done already. Should I just go ahead and use it, or redo it in a way that makes more sense?
+	\end{enumerate}
+\item by using PIRs and family information in ShapeIt and then LDhelmet 
+	\begin{enumerate}
+	\item An e-mail from Oliver Deleneau suggests that no, this is not possible. Bummer!
+	\item I suppose a kludge-y way to do this would be to phase family and then use that as a reference
+	\end{enumerate}
+\item by using LDhat straight away
+\end{enumerate}
+Honestly, I expect these results are going to be robust across analysis types. I should probably do some sort of power analysis to check and see what my PIR power is going to be -- calculating the average distance between biallelic SNPs should tell me a lot. Also, should I look at some kind of four gamete test like they did in Mimulus? A lot of this gets output by ShapeIT, so I should just look at that. It is non-intuitive to understand the reporting results, but it is a decent proxy. \\
+
+Back to calculating $N_e$. For zebrafinch, the total number of segregating sites is: 48726579. The total sequence length is: 859594837 bp. So, the segregating sites measure ($S_n$) is: $\frac{48726579}{859594837} = 0.0567$. Remember that $\theta = \frac{S_n}{a_n}$, where $a_n$ is $\frac{1}{1+\frac{1}{2}+\frac{1}{3} ... + \frac{1}{n - 1}}$. Here, $n=38$ because we have 19 diploid individuals. $a_{38} = 0.2317$, which means that $\theta = 0.2447$. $\theta = 4N_e\mu$, and let's take $\mu = 1 \times 10^{-9} \frac{mutations}{site \cdot gen}$, which means $N_e = 61 million$. That's absurd. If mutation rates are more on the order of humans, then we get a more reasonable $N_e = 6 million$. This actually concords quite well with the Balakrishnan and Edwards value of $\theta=7 million$. Similarly, for longtailed finch, $S_n = \frac{27995773}{897015175} = 0.0312$ and $a_{40} = 0.229$, which means that $\theta = 0.136$. Assuming the same human-ish $\mu$, $N_e = 3.4 million$. \\
+
+Now for calculating $\rho$. I didn't know much about how $\rho$ was calculated, or really what it meant. First, a centimorgan ($c$) is the distance between genes for which 1 out of 100 meiosis products are recombinant. Then, $\rho$ is the expected number of crossover events per gene per base, and $\rho = 4N_ec$. The main tricky part of this equation is that $c$ is the numerator of a fraction (the denominator is 100), so we need to take care of that and make it actual number before moving forward. In this case, the mean recombination rate in zebrafinches has been reported as $1.3 \frac{CM}{Mb}$ (Backstrom et al 2009; 0.1101/gr.101410.109). Converting to bp and turning it back into a fraction, $c = 1.3 \times 10^{-8} meiotic products per bp$. For zebrafinch, $\rho = 4 \cdot 6e6 \cdot 1.2e-8 = 0.312$, and for longtailedfinch, $\rho = 4 \cdot 3.4e6 \cdot 1.2e-8 = 0.1768$. \\
+
+These numbers might all be balderdash, but they are certainly quite different from the defaults, so I'll go with them for now. \\
+
+So went ahead and got started, and got the dreaded underflow in sequencing error. I am trying four things:
+\begin{enumerate}
+\item rerunning with more RAM (20g) -- still failed
+\item getting rid of window size -- still failed
+\item getting rid of window size and theta / rho
+\item just getting rid of theta / rho
+\end{enumerate}
+I am redoing the same file (chr23) that worked before, so something is probably off. \\
+
+This redos showed that for all that work looking at theta and rho, that is what was bugging the program! Will run with the incredibly wrong default values. This seems like a bad idea. Well, I am going to go forth with the bad idea, but I e-mailed Deleneau first. Another user had seen the same error, so I posted an update to that message. \\
+
+\emph{IN GENERAL I AM NOT HANDLING THE Z CHROMOSOME WELL. WILL NEED TO RECONSIDER THIS.}
+
+
+\labday{Weekend and Monday, 14 July 2014}
+\experiment{phasing}
+This weekend, started running ShapeIt based on PIRs for LTF and finished up the runs that failed for ZF. Some runs for ZF failed because they had insuffiicient memory. It is worth noting that the cluster does not generate the standard \'memory heap\' error when there is no more memory; rather, it just sorta shuts down. \\
+
+\experiment{recombination}
+In order to run LDhelmet, the file formats I have now need to be parsed in many ways. The first is that I need a mutation matrix, which shows the stationary distribution of mutation rates between different bases. To do this, I followed Chan et al. 2012 (10.1371/journal.pgen.1003090) and started to implement the method by writing the script \texttt{get\_mutation\_matrix.py}. 
+
+
+\labday{Tuesday, 15 July 2014}
+
+\experiment{phasing}
+Some of the initial ZF ShapeIt runs failed -- for a random subset of the smaller chromosomes. I reran those with larger window sizes, hoping it was an issue with window being too small. 
+
+\experiment{recombination}
+I finished the \texttt{get\_mutation\_matrix.py} script -- it took some finagling of the reference genome so that it was in the same format as my masked genome files -- the \"new reference\" genome is \texttt{reference/taeGut1\_60.bamorder.fasta}. I am currently running it on the ZF genome. If that works, I will repeat with the LTF genome. It worked, so I did it with the LTF genome. \\
+
+I spent a lot of time trying to figure out how to use the De Maio, Schlotterer, and Koisel (2013) method (PoMo) to get ancestral allele states. Along the way, I had to install Python and finagle with that and associated issues with libraries and such. It ended up wasting most of the day, because it turns out that PoMo does the ancestral allele reconstruction, but there is no way to get that information out of the program. Bummer. \\
+
+I then went back to our original idea of using the outgroups to get the ancestral state, though an informal counting scheme, essentially. I started to implement this in \texttt{simple\_ancestral\_allele.py}. There seems to be a lot of ancestral polymorphism, so it will be hard for this to be as exacting as I'd like. We'll see! Maybe it is fine given that everything is a prior, anyways.
+
+\labday{Wednesday, 16 July 2014}
+
+\experiment{phasing}
+Good progress on the phasing. Everything worked but for chromosome 20 in ZF. Pretty good! Need to figure out what happened there, but worth moving forward, at least.
+
+\experiment{recombination}
+Another thought -- maybe use the Darwin's finch to try phasing? It is about 10 mya diverged, which is pretty far, but is better than nothing. Will look at mapping efficiency, and go from there. Downloaded the reads from the SRA using the sra-toolkit -- wow, this is much better than just FTPing the reads to the server. Will definitely want to use it in the future. Used the reads in Project PRJNA178982 in SRA binary format and then dumped into FASTQ format using fastq-dump. \\
+
+In the meantime, I prepared the genome using Stampy. I am using Stampy rather than my favorite (bowtie2) because it can handle divergent reads well, which I imagine will be relevant here. 
+\begin{verbatim}
+~/bin/stampy-1.0.23/stampy.py --species=zebrafinch --assembly=taeGut1 -G taeGut1.bamorder ~/reference/taeGut1.bamorder.fasta
+~/bin/stampy-1.0.23/stampy.py -g ~/reference/taeGut1.bamorder -H ~/reference/taeGut1.bamorder
+/mnt/lustre/home/sonal.singhal1/bin/stampy-1.0.23/stampy.py -g ~/reference/taeGut1.bamorder -h ~/reference/taeGut1.bamorder -M ~/Darwin/Geospiza_magnirostris.fastq.gz --substitutionrate=0.1 -o ~/Darwin/Geospiza_magnirostris.sam --sanger -t 8
+\end{verbatim}
+
+Here are the long-awaited mutation matrices! I calculated these as followed by Chan et al 2013. These are both reported as A, C, G, T for both rows and columns, and the directionality is from row to column. These look a lot like the Drosophila matrices published in the Chan paper, though slightly different. \\
+
+Here is the matrix for the zebrafinch.
+\[ \left( \begin{array}{cccc}
+0.455 & 0.104 & 0.322 & 0.119 \\
+0.206 & 0.001 & 0.135 & 0.659 \\
+0.659 & 0.135 & 0 & 0.206 \\
+0.119 & 0.322 & 0.103 & 0.455 \end{array} \right) \] 
+
+Here is the matrix for the longtailed finch.
+\[ \left( \begin{array}{cccc}
+0.437 & 0.103 & 0.344 & 0.117 \\
+0.205 & 0 & 0.151 & 0.644 \\
+0.644 & 0.151 & 0 & 0.205 \\
+0.117 & 0.344 & 0.103 & 0.436 \end{array} \right) \] 
+
+These two matrices look pretty similar, as I would think.
+
+
+\labday{Thursday, 17 July 2014}
+
+\experiment{recombination}
+Aligning the ground finch genome sequences to the zebrafinch genome was going very slowly, and Stampy doesn't work in parallel unless you are running in BWA mode, so I created my own stupid parallel Stampy by splitting up the read file into 22 subfiles, and then running Stampy on 22 processes. It is still going pretty slowly, but at least this is a 22x speedup. I will then combine all the SAM files to get one master result, whenever it is finished. \\
+
+
+
+
+%----------------------------------------------------------------------------------------
+%	FORMULAE AND MEDIA RECIPES
+%----------------------------------------------------------------------------------------
+
+% \labday{} % We don't want a date here so we make the labday blank
+
+%\begin{center}
+%\HRule \\[0.4cm]
+%{\huge \textbf{Formulae and Media Recipes}}\\[0.4cm] % Heading
+%\HRule \\[1.5cm]
+%\end{center}
+
+%----------------------------------------------------------------------------------------
+%	MEDIA RECIPES
+%----------------------------------------------------------------------------------------
+
+%\newpage
+
+%\huge \textbf{Media} \\ \\
+
+%\normalsize \textbf{Media 1}\\
+%\begin{table}[H]
+%\begin{tabular}{l l l}
+%\toprule
+%\textbf{Compound} & \textbf{1L} & \textbf{0.5L}\\
+%\toprule
+%Compound 1 & 10g & 5g\\
+%Compound 2 & 20g & 10g\\
+%\bottomrule
+%\end{tabular}
+%\caption{Ingredients in Media 1.}
+%\label{tab:med1}
+%\end{table}
+
+%-----------------------------------------
+
+%\textbf{Media 2}\\ \\
+
+%Description
+
+%----------------------------------------------------------------------------------------
+%	FORMULAE
+%----------------------------------------------------------------------------------------
+
+%\newpage
+
+%\huge \textbf{Formulae} \\ \\
+
+%\normalsize \textbf{Formula 1 - Pythagorean theorem}\\ \\
+%$a^2 + b^2 = c^2$\\ \\
+
+%-----------------------------------------
+
+%\textbf{Formula X - Description}\\ \\
+
+%Formula
+
+%----------------------------------------------------------------------------------------
+
+\end{document}
