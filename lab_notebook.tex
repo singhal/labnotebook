@@ -270,7 +270,7 @@ I started my phasing experiments. There are four main ways that I could phase.
 \end{enumerate}
 Honestly, I expect these results are going to be robust across analysis types. I should probably do some sort of power analysis to check and see what my PIR power is going to be -- calculating the average distance between biallelic SNPs should tell me a lot. Also, should I look at some kind of four gamete test like they did in Mimulus? A lot of this gets output by ShapeIT, so I should just look at that. It is non-intuitive to understand the reporting results, but it is a decent proxy. \\
 
-Back to calculating $N_e$. For zebrafinch, the total number of segregating sites is: 48726579. The total sequence length is: 859594837 bp. So, the segregating sites measure ($S_n$) is: $\frac{48726579}{859594837} = 0.0567$. Remember that $\theta = \frac{S_n}{a_n}$, where $a_n$ is $\frac{1}{1+\frac{1}{2}+\frac{1}{3} ... + \frac{1}{n - 1}}$. Here, $n=38$ because we have 19 diploid individuals. $a_{38} = 0.2317$, which means that $\theta = 0.2447$. $\theta = 4N_e\mu$, and let's take $\mu = 1 \times 10^{-9} \frac{mutations}{site \cdot gen}$, which means $N_e = 61 million$. That's absurd. If mutation rates are more on the order of humans, then we get a more reasonable $N_e = 6 million$. This actually concords quite well with the Balakrishnan and Edwards value of $\theta=7 million$. Similarly, for longtailed finch, $S_n = \frac{27995773}{897015175} = 0.0312$ and $a_{40} = 0.229$, which means that $\theta = 0.136$. Assuming the same human-ish $\mu$, $N_e = 3.4 million$. \\
+Back to calculating $N_e$. For zebrafinch, the total number of segregating sites is: 48726579. The total sequence length is: 859594837 bp. So, the segregating sites measure ($S_n$) is: $\frac{48726579}{859594837} = 0.0567$. Remember that $\theta = \frac{S_n}{a_n}$, where $a_n$ is $\frac{1}{1+\frac{1}{2}+\frac{1}{3} ... + \frac{1}{n - 1}}$. Here, $n=38$ because we have 19 diploid individuals. $a_{38} = 0.2317$, which means that $\theta = 0.2447$. $\theta = 4N_e\mu$, and let's take $\mu = 1 \times 10^{-9} \frac{mutations}{site \cdot gen}$, which means $N_e = 61 million$. That's absurd. If mutation rates are more on the order of humans, then we get a more reasonable $N_e = 6 million$. This actually concords quite well with the Balakrishnan and Edwards value of $N_e=7 million$. Similarly, for longtailed finch, $S_n = \frac{27995773}{897015175} = 0.0312$ and $a_{40} = 0.229$, which means that $\theta = 0.136$. Assuming the same human-ish $\mu$, $N_e = 3.4 million$. \\
 
 Now for calculating $\rho$. I didn't know much about how $\rho$ was calculated, or really what it meant. First, a centimorgan ($c$) is the distance between genes for which 1 out of 100 meiosis products are recombinant. Then, $\rho$ is the expected number of crossover events per gene per base, and $\rho = 4N_ec$. The main tricky part of this equation is that $c$ is the numerator of a fraction (the denominator is 100), so we need to take care of that and make it actual number before moving forward. In this case, the mean recombination rate in zebrafinches has been reported as $1.3 \frac{CM}{Mb}$ (Backstrom et al 2009; 0.1101/gr.101410.109). Converting to bp and turning it back into a fraction, $c = 1.3 \times 10^{-8} meiotic products per bp$. For zebrafinch, $\rho = 4 \cdot 6e6 \cdot 1.2e-8 = 0.312$, and for longtailedfinch, $\rho = 4 \cdot 3.4e6 \cdot 1.2e-8 = 0.1768$. \\
 
@@ -349,66 +349,71 @@ These two matrices look pretty similar, as I would think.
 \experiment{recombination}
 Aligning the ground finch genome sequences to the zebrafinch genome was going very slowly, and Stampy doesn't work in parallel unless you are running in BWA mode, so I created my own stupid parallel Stampy by splitting up the read file into 22 subfiles, and then running Stampy on 22 processes. It is still going pretty slowly, but at least this is a 22x speedup. I will then combine all the SAM files to get one master result, whenever it is finished. \\
 
+I worked on getting the filtered for quality and coverage VCF files for longtailed finch into LDhat format. The main constraints of the program is that it can only handle variable, biallelic positions, so I had to get rid of any fixed or true polyallelic positions. Another fussy thing about LDhat -- it cannot handle multiple variants at a site, so I had to dump any such variants. All of these tend to be when GATK calls a SNP and indel for the same position. I did this using the script \texttt{convert\_vcf\_to\_ldhat.py}, which works on the files (all variants, not just biallelic) in the \texttt{/mnt/lustre/home/sonal.singhal1/LTF/after\_vqsr/by\_chr}. \\
+
+For LDhat, I need to get a likelihood lookup table, which is contingent on the $\theta$ for the species and the $N$ (number of chromosomes) sampled for the species. To do that, I ran the \verb+complete+ program that is part of LDhat. The command I ran was: 
+\begin{verbatim}
+~/bin/LDhat_v2.2/complete -n 40 -rhomax 100 -n_pts 101 -theta 0.136 -prefix LTF
+\end{verbatim}
+The $\theta$ value I used was the same one I calculated using the number of segregating sites (Watterson's $\theta$). \\
+
+\experiment{phasing}
+I am not sure why chromosome 20 for zebrafinch keeps failing, so I am going to try rerunning extractPIRs with greater stringency for quality, and see if that makes a difference. New command:
+\begin{verbatim}
+~/bin/extractPIRs.v1.r68.x86_64/extractPIRs --bam /mnt/lustre/home/sonal.singhal1/ZF/phasing/PIR_approach/chr20_bamlist --vcf /mnt/lustre/home/sonal.singhal1/ZF/after_vqsr/by_chr/gatk.ug.zf.chr20.filtered.coverage.biallelicSNPs.vqsr.vcf.gz --out /mnt/lustre/home/sonal.singhal1/ZF/phasing/PIR_approach/chr20_PIRlist --base-quality 20 --read-quality 20
+\end{verbatim}
+Although it didn't influence the number of PIRs found or used, this run finished. Doesn't make sense, but I suppose it need not to.
+
+I also wanted to try running ShapeIt using the duoHMM option, which allows you to use any level of pedigree information to phase chromosomes. Ellen had used an older version of ShapeIt that only allowed one trio or one duo. So, to do that, I had to first properly merge the unrel\_zf and rel\_zf files, because for some reason, they were called independently of each other. I am not sure why. To do this, I did the following:
+\begin{enumerate}
+\item Took as the starting VCF for the un\_rel zf to be \verb+/mnt/gluster/home/emleffler/genotype_callsets/zebrafinch/zf_unrels/unified_genotyper/after_vqsr/gatk.ug.unrelzf.allchrs.snps.indels.vqsr2.vcf.gz+. Note that this includes all sites; I need to be able to distinguish between non-variable sites and sites with missing data, and this is the only way to do that.
+\item Took as the starting VCF for the rel zf to be \verb+/mnt/gluster/home/emleffler/genotype_callsets/zebrafinch/zf_family/unified_genotyper/after_vqsr/gatk.ug.MP1-5.allchrs.snps.indels.vqsr2.allsites.vcf.gz+. Note that this includes all sites; I need to be able to distinguish between non-variable sites and sites with missing data, and this is the only way to do that.
+\item Took the un\_rel zf VCF and separated it by chromosome and filtered it for coverage and non-mendel sites using \verb+make_vcf_filtered_for_coverage_by_chr_no_mendel.py+.
+\item Took the rel zf VCF and separated it by chromosome and filtered it for coverage and non-mendel sites using \verb+make_vcf_filtered_for_coverage_by_chr_no_mendel.py+.
+\item I then started writing a script that will take these two VCFs and merge them into a PED Plink output. I am not using VCF format because it would require me to recode the VCF to better handle indels and \"fake\" polyallelic sites, and I don't want to do that.
+\item VCF to ShapeIt PED format
+\begin{enumerate}
+\item family id (unique for every individual)
+\item individual id 
+\item father
+\item mother
+\item sex
+\item phenotype??
+\item Genotypes
+\begin{itemize}
+\item 1 - indel 1
+\item 2 - indel 2
+\item A,T,C,G, as expected
+\item 0 = missing
+\end{itemize}
+\end{enumerate}
+\end{enumerate}
+
+\experiment{data_management}
+I set up my education GitHub account, which allows me to have private repos. I set up two repos, one for my scripts (\texttt{https://github.com/singhal/postdoc}) and the other for my lab notebook (\texttt{https://github.com/singhal/labnotebook}).
+
+\labday{Friday, 18 July 2014}
+
+A bit of a slow day due to medical appointments.
+
+\experiment{phasing}
+I wrote the script that will take the two sets of VCFs for zebrafinch (related and unrelated) that contain all sites that pass the coverage filter. From these files, it will combine to only select out the sites that are polymorphic in either set of variants. I will then run these through CombineVariants in GATK.
+
+\experiment{recombination}
+Okay, I totally messed up LDhat in two ways. First, I didn't account for the fact that it is best run as 4000 sites at a time, so I changed the \verb+convert_vcf_to_ldhat.py+ script to account for running 4000 sites with 200 bp overlap on either side, except for edge conditions. In the process of deleting the old files, though, I managed to delete the likelihood lookup table! Grr. So I am rerunning the likelihood lookup table, and once that is done, I will start the convert script if it works with a test file. This is the command I tried on my original files, and then realized these files are too big and would take way too long to run. \\
+\verb+~/bin/LDhat_v2.2/rhomap -seq filtered.coverage.vqsr_chr22.sites -loc filtered.coverage.vqsr_chr22.locs -lk LTFnew_lk.txt -its 10000000 -samp 5000 -burn 1000000 -prefix chr22+
+
+One good thing about this: I found Adam Auton's 2012 Science paper (10.1126/science.1216872), and it has the best SOM -- very clear and should give me some guidance on things that I should consider.
 
 
+\labday{Weekend and Monday, 21 July 2014}
+\experiment{phasing}
+Molly wants us to try phasing including the sites that have three alleles or more. I am not so sure about the logic of this, given that LDhelmet can only handle biallelics. Perhaps the thought is that it will help phasing, even if some of the sites don't make it to the next round? Anyways, the extractPIR routine of ShapeIT cannot handle VCFs that have polyallelic sites, so I had to recode any such sites as two biallelic sites. I wrote a script \verb+change_vcf_polyalleles_bialleles.py+, which does that and also filters for indels ... which extractPIRs cannot handle for sure. I am now re-running the extractPIR routine on all chromosomes for ZF and LTF. I have kept the previous results in the \verb+phasing/PIR_approach/old/+ folders under each species folder. \\
 
-%----------------------------------------------------------------------------------------
-%	FORMULAE AND MEDIA RECIPES
-%----------------------------------------------------------------------------------------
+Finding the intersection of sites between the unrel and related ZF individuals finally completed, so I am going to concatenate the files now.
 
-% \labday{} % We don't want a date here so we make the labday blank
+\experiment{recombination}
+As part of the ongoing attempt to get good ancestral allele site info, the alignment to the finch genome finally finished, and now I am working on converting all the SAM files into sorted BAM files... I will then combine across BAM files so that I have something that I can use with GATK for variant calling.
 
-%\begin{center}
-%\HRule \\[0.4cm]
-%{\huge \textbf{Formulae and Media Recipes}}\\[0.4cm] % Heading
-%\HRule \\[1.5cm]
-%\end{center}
-
-%----------------------------------------------------------------------------------------
-%	MEDIA RECIPES
-%----------------------------------------------------------------------------------------
-
-%\newpage
-
-%\huge \textbf{Media} \\ \\
-
-%\normalsize \textbf{Media 1}\\
-%\begin{table}[H]
-%\begin{tabular}{l l l}
-%\toprule
-%\textbf{Compound} & \textbf{1L} & \textbf{0.5L}\\
-%\toprule
-%Compound 1 & 10g & 5g\\
-%Compound 2 & 20g & 10g\\
-%\bottomrule
-%\end{tabular}
-%\caption{Ingredients in Media 1.}
-%\label{tab:med1}
-%\end{table}
-
-%-----------------------------------------
-
-%\textbf{Media 2}\\ \\
-
-%Description
-
-%----------------------------------------------------------------------------------------
-%	FORMULAE
-%----------------------------------------------------------------------------------------
-
-%\newpage
-
-%\huge \textbf{Formulae} \\ \\
-
-%\normalsize \textbf{Formula 1 - Pythagorean theorem}\\ \\
-%$a^2 + b^2 = c^2$\\ \\
-
-%-----------------------------------------
-
-%\textbf{Formula X - Description}\\ \\
-
-%Formula
-
-%----------------------------------------------------------------------------------------
 
 \end{document}
