@@ -272,7 +272,7 @@ Honestly, I expect these results are going to be robust across analysis types. I
 
 Back to calculating $N_e$. For zebrafinch, the total number of segregating sites is: 48726579. The total sequence length is: 859594837 bp. So, the segregating sites measure ($S_n$) is: $\frac{48726579}{859594837} = 0.0567$. Remember that $\theta = \frac{S_n}{a_n}$, where $a_n$ is $\frac{1}{1+\frac{1}{2}+\frac{1}{3} ... + \frac{1}{n - 1}}$. Here, $n=38$ because we have 19 diploid individuals. $a_{38} = 0.2317$, which means that $\theta = 0.2447$. $\theta = 4N_e\mu$, and let's take $\mu = 1 \times 10^{-9} \frac{mutations}{site \cdot gen}$, which means $N_e = 61 million$. That's absurd. If mutation rates are more on the order of humans, then we get a more reasonable $N_e = 6 million$. This actually concords quite well with the Balakrishnan and Edwards value of $N_e=7 million$. Similarly, for longtailed finch, $S_n = \frac{27995773}{897015175} = 0.0312$ and $a_{40} = 0.229$, which means that $\theta = 0.136$. Assuming the same human-ish $\mu$, $N_e = 3.4 million$. \\
 
-Now for calculating $\rho$. I didn't know much about how $\rho$ was calculated, or really what it meant. First, a centimorgan ($c$) is the distance between genes for which 1 out of 100 meiosis products are recombinant. Then, $\rho$ is the expected number of crossover events per gene per base, and $\rho = 4N_ec$. The main tricky part of this equation is that $c$ is the numerator of a fraction (the denominator is 100), so we need to take care of that and make it actual number before moving forward. In this case, the mean recombination rate in zebrafinches has been reported as $1.3 \frac{CM}{Mb}$ (Backstrom et al 2009; 0.1101/gr.101410.109). Converting to bp and turning it back into a fraction, $c = 1.3 \times 10^{-8} meiotic products per bp$. For zebrafinch, $\rho = 4 \cdot 6e6 \cdot 1.2e-8 = 0.312$, and for longtailedfinch, $\rho = 4 \cdot 3.4e6 \cdot 1.2e-8 = 0.1768$. \\
+Now for calculating $\rho$. I didn't know much about how $\rho$ was calculated, or really what it meant. First, a centimorgan ($c$) is the distance between genes for which 1 out of 100 meiosis products are recombinant. Then, $\rho$ is the expected number of crossover events per generation per base, and $\rho = 4N_ec$. The main tricky part of this equation is that $c$ is the numerator of a fraction (the denominator is 100), so we need to take care of that and make it actual number before moving forward. In this case, the mean recombination rate in zebrafinches has been reported as $1.3 \frac{CM}{Mb}$ (Backstrom et al 2009; 0.1101/gr.101410.109). Converting to bp and turning it back into a fraction, $c = 1.3 \times 10^{-8} meiotic products per bp$. For zebrafinch, $\rho = 4 \cdot 6e6 \cdot 1.3e-8 = 0.312$, and for longtailedfinch, $\rho = 4 \cdot 3.4e6 \cdot 1.2e-8 = 0.1768$. \\
 
 These numbers might all be balderdash, but they are certainly quite different from the defaults, so I'll go with them for now. \\
 
@@ -408,12 +408,330 @@ One good thing about this: I found Adam Auton's 2012 Science paper (10.1126/scie
 
 \labday{Weekend and Monday, 21 July 2014}
 \experiment{phasing}
-Molly wants us to try phasing including the sites that have three alleles or more. I am not so sure about the logic of this, given that LDhelmet can only handle biallelics. Perhaps the thought is that it will help phasing, even if some of the sites don't make it to the next round? Anyways, the extractPIR routine of ShapeIT cannot handle VCFs that have polyallelic sites, so I had to recode any such sites as two biallelic sites. I wrote a script \verb+change_vcf_polyalleles_bialleles.py+, which does that and also filters for indels ... which extractPIRs cannot handle for sure. I am now re-running the extractPIR routine on all chromosomes for ZF and LTF. I have kept the previous results in the \verb+phasing/PIR_approach/old/+ folders under each species folder. \\
+Molly wants us to try phasing including the sites that have three alleles or more. I am not so sure about the logic of this, given that LDhelmet can only handle biallelics. Perhaps the thought is that it will help phasing, even if some of the sites don't make it to the next round? Anyways, the extractPIR routine of ShapeIT cannot handle VCFs that have polyallelic sites, so I had to recode any such sites as two biallelic sites. I wrote a script \verb+change_vcf_polyalleles_bialleles.py+, which does that and also filters for indels ... which extractPIRs cannot handle for sure. I am now re-running the extractPIR routine on all chromosomes for ZF. I have kept the previous results in the \verb+phasing/PIR_approach/old/+ folders under each species folder. I cannot rerun them for LTF because the BAM files have moved. AGAIN.\\
 
-Finding the intersection of sites between the unrel and related ZF individuals finally completed, so I am going to concatenate the files now.
+Finding the intersection of sites between the unrel and related ZF individuals finally completed, so I am going to concatenate the files now. I concatenated them using the script \verb+run_GATK_CombineVariants.py+. Note that anytime you run GATK, you need to make sure that they have been compressed with bgzip and indexed with tabix.
 
 \experiment{recombination}
-As part of the ongoing attempt to get good ancestral allele site info, the alignment to the finch genome finally finished, and now I am working on converting all the SAM files into sorted BAM files... I will then combine across BAM files so that I have something that I can use with GATK for variant calling.
+As part of the ongoing attempt to get good ancestral allele site info, the alignment to the finch genome finally finished, and now I am working on converting all the SAM files into sorted BAM files... I will then combine across BAM files so that I have something that I can use with GATK for variant calling. So, I converted, sorted, and combined, and am now using samtools and bcftools to call the genome. The command I ran was \verb+~/bin/samtools-0.1.19/samtools mpileup -I -uf ~/reference/taeGut1_60.bamorder.fasta Geospiza.sorted.bam | ~/bin/samtools-0.1.19/bcftools/bcftools view -t 0.1 -I -c - | ~/bin/samtools-0.1.19/bcftools/vcfutils.pl vcf2fq -l 0 > finch_genome.fa+ and was borrowed liberally from the PSMC suggestion (https://github.com/lh3/psmc).
 
+\labday{Tuesday, 22 July 2014}
+\experiment{phasing}
+Ellen put all the LTF bams in the same place \verb+/mnt/gluster/data/internal_restricted_supp/finches_2014/longtailedfinch/realigned_mateFixed_recal_bams+, so I started the next round of ShapeIt calls. \\
+
+I then spent a lot of time trying to get ShapeIt for families to work. First, I finished the script \verb+convert_vcf_to_ped.py+. It changed a lot since I first wrote it, because I wanted to account for the revised way that I intersected variants. It turned out that intersecting variants that way was a bit of a disaster, because although I output only sites that were polymorphic, I didn't account for sites that were polymorphic for a SNP but not for an indel. So, I had to make sure to only select the sites that were PASSing in one or the other VCF file, even though you would think this merged VCF would only have those sites. Then, it turns out that ShapeIt in the family mode (duoHMM) cannot handle triallelic sites, nor can it handle triallelic sites that are coded as two biallelic sites. (There went 2 hours.) So, I had to rewrite the script to only consider biallelic sties, and when there was a site with both a SNP and an indel, I kept the SNP and dropped the indel, because the next downstream step (LDhelmet) can only use SNPs. The basic test command I ran was \verb+~/bin/shapeit_v2r790/shapeit --input-ped chr16.ped chr16.map --duohmm -W 5 --output-max test+. I will want to finesse it. Worth noting that the chromosome names have to be recoded a bit for ShapeIt. The recoding was the following:  chr1: 1, chr2: 2, chr3: 3, chr4: 4, chr5: 5, chr6: 6, chr7: 7, chr8: 8, chr9: 9, chr10: 10, chr11: 11, chr12: 12, chr13: 13, chr14: 14, chr15: 15, chr16: 16, chr17: 17, chr18: 18, chr19: 19, chr20: 20, chr21: 21, chr22: 22, chr23: 33, chr24: 34, chr25: 35, chr26: 36, chr27: 37, chr28: 38, chr1A: 30, chr1B: 31, chr4A: 32, chrLG2: 39, chrLG5: 40, chrLGE22: 41, chrZ: X. Also, that sex is 1 for ZW and 2 for ZZ. \\
+
+I tested the LDhat likelihood table and it worked. But like an idiot, I deleted it again. Am recreating it and will run it tomorrow. I am also convinced that I should be running the interval program of LDhat instead of rhomap, so will adjust that accordingly. The test files of 4000 SNPs each worked, though, so I am going ahead and creating those using \verb+convert_vcf_to_ldhat.py+. \\
+
+\experiment{recombination}
+There was a problem with how finch genome was recreated, in that I allowed indels. Uf. Am redoing it without indels. 
+
+\labday{Wednesday and Thursday, 23 and 24 July 2014}
+This was a bit of a hodge-podge kind of day. First, it turned out that my \verb+convert_vcf_to_ped.py+ had a computing leak, so it took me a lot of sleuthing to find it. It turns out that I had used a list where I really should have used a dictionary, and that slowed down the script to a snail's pace once it had parsed half the rows. That said, this script still requires tons and tons of memory, because it stores all the genotypes in memory. I cannot figure out an easier way to do this that handles all bialllelic sites properly (this prevents me from using Plink), so I am just running the script with ton of memory. But, because bigmem01 is down, these runs have been slow to go. \\
+
+Then, I played around some with LDhat. It turned out that the way the manual suggested to name chromosome length was ambiguous, and I had made the wrong decision in how to parse it. So, I had to fix up my script (\verb+convert_vcf_to_ldhat.py+) to do it properly and run it again. I played around with interval, the program that I will be using instead of rhomap, and it looks like the key parameter is this block penalty parameter, which defines how many blocks of recombination there are in the set of SNPs. Auton recommends using 5, but he also recommends testing multiple values. I am not sure how I will do that... \\
+
+Then, I worked on the ancestral genomes simple method. In my test case, about 60\% of sites were pretty easy to unambiguously assign to an ancestral condition -- these were sites for which the other two finch species had no variation. That's pretty good. For the other cases, I started thinking about using the Geospiza genome. Once I started to look at it, though, I was very disappointed by the quality of the SNP calls in the Geospiza genome. Further investigation showed that a very small percentage of the Geospiza reads aligned to the zebrafinch genome (<20\%) even though the original paper reported alignment rates of 80\%. So, I decided that Stampy is, in fact, as bad of a program as it seems. I went back to using Bowtie2 when some test cases showed that it was giving alignment rates nearer to 80\%. I wrote the tiniest script to do this called \verb+run_bowtie.py+. It did look like some the runs failed partially through. I am not sure if this was a memory issue or what, so I reran those. Otherwise, this script seems like a pretty decent way to define ancestral alleles, though the true measure will be inspecting the unfolded SFS (and maybe even folded SFS). \\
+
+Also, some of the ShapeIt post-PIR runs failed, so I am trying to run them again, removing the window call. That worked for almost all the failed runs last time. \\
+
+I continued the work on the ancestral allele identification, and I took a look at the SFS generated from about 10K SNPs. Comparing it to the expected SFS (this work is on my local computer, \verb+sfs.ipynb+), there are more singletons than expected (and fewer low-frequency variants) and there is a slight uptick for high-frequency derived alleles. Bummer. This is the mark of not well-polarized SNPs. Will take a second look at the code and see what I can do to avoid it. \\
+
+I also started to get another outgroup sequence from Geospiza fortis, which is closely related to Geospiza magnirostris, so really won't add any additional information ... however, the benefit is that this sequencing was done to much higher coverage and with Illumina data (so less prone to indel related errors). Will be an additional confirmation. The project ID in NCBI is PRJNA156703 and the \"paper\" is http://gigadb.org/dataset/100040. Remember that the path here is prefetch to fastq-dump to gzip FASTQ to Bowtie to SAM to sorted BAM to call variants.
+
+\labday{Friday, 25 July 2014}
+Today, I ended up sending a lot of time on \verb+birdtree.org+, in an attempt to get a phylogeny for the species that I am studying. This is based on the Jetz paper from 2013 in Nature, and the website allows you to download a subsample of the trees generated through the MCMC chain, and you can then summarize across the trees.
+
+\labday{Monday, 28 July 2014}
+I continued work on getting the Geospiza fortis reference sequence -- I started the alignments over the weekend, and they are going slowly. All the sequence online will give over 100$\times$ coverage, which is more than I need, so I am probably going to limit the alignment at a certain point. Okay, about midway through these runs, I finally checked the SAM files and they were super weird. That's because the folks who uploaded these reads decided to concatenate head-to-tail the two paired ends of a read. Uf. I had to write a script (\verb+splitreads.py+) to split each read up and to put it into two separate reads, and I will need to figure out the more appropriate Bowtie commands for these reads now. \\
+
+Over the weekend, I also started the family runs for ZF ShapeIt, implemented in \verb+run_shapeit_fam.py+. The basci command is: \verb+shapeit --input-ped PED_FILE MAP_FILE --duohmm -W 3 --output-max HAPS -T 8 --output-log LOGFILE+. \\
+
+So of all the chromosomes for the family-based phasing, all are working well ... except for chromosome 26. I just spent three hours trying to track down why it isn't working, and I have no clue. ShapeIT is saying that there is a SNP with completley missing data, but there is no such evidence. (It is important to note that this error is only thrown in duoHMM mode.) I thought the problem could be with my script, so I tried to create the MAP and PED files using vcftools and plink, but that recreated file threw the same error. I posted to the ShapeIt server to see what they thought. For now, I will just use Ellen's results, perhaps? \\
+
+I kept on working on \verb+simple_ancestral_alleles.py+ -- no big changes, though it remains that about 10\% of sites are ambiguous. I hope that adding G. fortis will improve things, though we will see. \\
+
+I started the LDhat runs for long-tailed finch. I decided to use interval instead of rhomap, based on reading some of Auton's other papers. I split up all the calls (8219 in total!) across 10 different runs, which I just started. Also, to make things more reasonable, I am running them for only 5e6 iterations. I also am using a block penalty of 5; knowing no better what to use, that's what Auton recommended in the manual. \\
+
+I started to filter the DBF files for multiallelic sites and indels, using \verb+remove_multialleles_indels.py+. There was a problem with DBF having SNPs and indels at the same site, but this will get rid of that problem because it will remove all indels. I think this is kind of cheating, but I have also noticed that almost no programs use indels at all for anything. I think indels are generally untrusted. \\
+
+When I tried to use the filtered VCFs for ShapeIt haplotype calling, it failed because ShapeIt refuses to use just less than 10 individuals for phasing, unless you have a reference panel. Am going to try again ReadBackedPhasing from GATK, which I've used before and didn't find all that great, but is better than nothing. Got ReadBackedPhasing going, using this basic command \verb+/home/shyamg/bin/java -Xmx4g -jar /mnt/lustre/home/sonal.singhal1/bin/GenomeAnalysisTK.jar -T ReadBackedPhasing -R /mnt/lustre/home/sonal.singhal1/reference/taeGut1.bamorder.fasta -I /mnt/lustre/home/sonal.singhal1/DBF/bams/DB.allchrs.realigned.mateFixed.recal.bam --variant %s -L %s -o %s --phaseQualityThresh 20.0+. \\
+
+\labday{Tuesday, 29 July 2014}
+The splitting of the FASTQ reads for G. fortis finished, so I started the Bowtie2 reads. It seems to be going well, and pretty quickly. \\
+
+Some of the DBF readbacked phasing failed, for no apparent reason. Could this be connected to the instability of oss3? Started these again with slightly more memory. \\
+
+\labday{Wednesday, Thursday, Friday, 30 July - 1 August 2014}
+Lost a lot of time due to the move and lab visitors. 
+
+Interesting conversation with Iain Matheison, who argued a few things:
+\begin{enumerate}
+\item You should always use the aligner designed for that variant caller (BWA w. GATK, Stampy w. Platypus)
+\item It is okay that I couldn't use \"more accurate\" estimates of $\rho$ and $N_e$ for ShapeIT -- the program has been calibrated to run at those values, and other values make it fussy. (That's exactly what I saw.)
+\item When calculating switch error rate, probably a lot of my errors are due to singletons or doubletons (and other rare variants) being out of phase. I might want to discount such sites, because phasing them will be very hard, unless they are covered by a phase-informative site. He isn't that surprised by my high switch error rates.
+\item I might want to phase and make the recombination map only using non-rare variants. Whew.
+\item Given my high switch error rate, it is worth considering running LDhelmet with both phasing attempts and just running LDhat on unphased data.
+\item I should really pursue the combined approach for phasing.
+\end{enumerate}
+
+
+\labday{Monday, 4 August 2014}
+So through a lot of trial-and-error, I independently come onto a way to calculate error rates in phasing that is widely known in the literature as \"switch error rate\". This basically counts how many times you have to switch the phasing to get the true and fake haplotype to match up. The denominator is the number of sites that you have to phase, which is the number of heterozygous sites for that individual. In Amy's work, where they were phasing tons of genomes (1000$\times$, the switch error rate tends to be quite low - less than 10\%). In my samples, the switch error rate is really high, especially when there are few heterozygous sites. The average switch error rate is more like 30\%. Some of this is likely due to rare variants, as Iain Mathesion pointed out. But, the point of all this is it makes me very wary about this phasing, particularly because we haven't accounted for uncertainity in phasing. I think that I will account for this by running LDhat and by trying to use haplotypes from both phasing methods ... and possibly by trying to combine the phasing methods. The script was implemented in \verb+compare_haplotypes.py+. \\
+
+I installed LDhelmet, which took a while because the Boost libraries are pretty fussy. The only way I could get the install to work was to edit my \verb+.bashrc+ profile to include \verb+export LD_LIBRARY_PATH=/mnt/lustre/home/sonal.singhal1/bin/lib/+. This command has to be executed every time I run LDhelmet so that it can find the libraries it needs to run. \\
+
+Throughout the weekend, I worked on sorting and merging the BAM files from G. fortis. Things were super fussy, because it turns out I couldn't get any of the multi-threaded options to work on the cluster, which I kinda wanted to use, because these files were so big. Finally, I just went and did it the normal way. Once I had the sorted and merged bam file (resulting file: \verb+Geospiza_fortis.bam+, I went back to create the reference genome sequence. I used (essentially) the same command I used for the G. magnistrosis genome: \verb+echo "~/bin/samtools-0.1.19/samtools mpileup -I -uf /mnt/gluster/home/sonal.singhal1/reference/taeGut1_60.bamorder.fasta /mnt/gluster/home/sonal.singhal1/Darwin/g_fortis/Geospiza_fortis.bam | ~/bin/samtools-0.1.19/bcftools/bcftools view -t 0.1 -I -c - | ~/bin/samtools-0.1.19/bcftools/vcfutils.pl vcf2fq -l 0 > /mnt/gluster/home/sonal.singhal1/Darwin/g_fortis/Geospiza_fortis.fa" | qsub -l h_vmem=20g -cwd -V -j y -N 'fortis_gen'+. It appears to be running impossibly slowly, but I suppose that is because it is such a big BAM (70g). \\
+
+I moved over most of my files to \verb+/mnt/gluster/home/sonal.singhal1/+ because J. Zekos said the lustre file system was running out of space. Then I asked him to change my home directory to be that directory, but that didn't turn out to work so well. He had to change it back. I ended up loosing quite a bit of time in that. Most importantly, I had to stop the long-running LDhat runs and start them again. \\
+
+And oh -- I figured out why the chr26 for ZF family kept failing because of a missing data error. (There were no obvious data missing.) It was because Mendelian errors in \verb+-duoHMM+ mode lead to imputation at those sites, which could lead to a site with variation becoming a site with no variation. To deal with that, I removed all sites with Mendelian errors and reran. It worked! \\
+
+\labday{Tuesday, 5 August 2014 -- Friday, 15 August 2014}
+Very few updates here because I had to backtrack a lot over the last two weeks. These two weeks were essentially dealing with my concerns that the switch error rate inferred between family-informed phasing and read-backed phasing was exceptionally high -- it could be as high as 30\% to 40\% across any given chromosome. This clearly would not do, as the basis for recombination estimates revolves around inferred breakpoints between haplotypes. 
+
+I met with Molly, and she was skeptical about everything, including:
+\begin{enumerate}
+\item Using human-specific values for $\rho$ and $N_e$; she advised using the bird specific values (which are different from the ones I inferred). Although that still wouldn't work because of the overflow errors, I did increase the rho value to be 0.0008, or double the default. This makes it more in line with the values of $c$ reported in the literature, assuming the default $N_e$ in the program? But Molly said it should be 10$\times$ greater? I am not sure why or how.
+\item The percentage of heterozygous sites covered by PIRs. I don't quite get this concern, though I suppose it would be easy enough to test empirically.
+\item The influence of singleton mutations in switch error rate -- they don't make that big of a difference, it would turn out.
+\item That PIR phasing would be better than family phasing, which was my instinct but not hers.
+\item My implementation of the ancestral allele finding, because I only considered the Darwin's finches when the more internal branches were uninformative.  For this concern, I think it is best to be aware of the inconstinency and code sites accordingly. 
+\end{enumerate}
+
+So, I went back and took a closer look at phase uncertainty and what might be causing it and how I could handle it. These explorations are covered in my iPython Notebook on my local drive called \verb+phasing_error.ipynb+. Basically, ShapeIt allows uncertainty to be realized two ways -- you can either sample sets of haplotypes from the haplotype graphs, or you can output the frequency of haplotypes at a given set of sites. Either way, you get a sense for how much general uncertainty there is, but very little appreciation for how any given site has been tricky to phase. I thought (mistakenly) that one could get phasing uncertainty at pairs of sites, and then knock out those sites that do not have good phasing certainty. Yeah, that didn't work. First of, it turns out that even modest decreases in phasing uncertainty can result in appreciable rates of switch error; it doesn't take much for things to get wonky. Second of, phasing isn't really something you can do site by site (though this is confusing because that's how Phase used to report the results); rather, it is something that you do in context of other sites. Knowing how phasing uncertainty propagates along a haplotype seems impossible too predict from casting a look at more regional windows. Given all this, I decided the best bet is to go with the most likely haplotypes and then get an idea for the switch error rate along a chromosome. If it turns out that we see interesting patterns, we can either sample across all haplotypes at a given hotspot (for example) and see if the pattern holds, or we can confirm that switch error rate is low in that region.
+
+The rest of the time I spent backtracking on the work that I had done, because I realized that I really disagreed with recoding the triallelic sites to be two biallelic sites, especially because it lead to a lot of \"overflow errors\". Also, it made an insignificant difference. So, starting with LTF, I did the following:
+\begin{enumerate}
+\item Started with the by chromosome files that had been filtered for coverage.
+\item Recoded \"fake polyalleles\" as bialleles and removed any indels to create the \verb+*recoded_biallelicSNPs+ files.
+\item Took these VCFs and used them for PIR extraction and assembly, using the higher rho value AND outputting the haplotype graphs (these capture the uncertainty around haplotype estimation).
+\item Used the most likely haplotypes to create the sequence files (40 sequences for the population because each individual donates two haplotypes) using the script \verb+make_seq_for_ldhelmet.py+. Importantly, I removed any singletons, because the phasing uncertainty profiling showed that removing singletons reduced switch error rates.
+\item Found the assumed ancestral allele at every variable site using the script \verb+simple_ancestral_alleles.py+.
+\item Ran the script that calculates phasing uncertainty for every set of 50 SNPs.
+\end{enumerate}
+
+Starting with ZF, I did the following:
+\begin{enumerate}
+\item Started with the raw, unfiltered files for unrelated and related zebrafinch.
+\item Filtered both for coverage and divided them up into chromosome.
+\item Combined the unrelated and related individuals.
+\item Filtered for variants.
+\item Turned into PED / MAP files.
+\item Used PED / MAP files with Plink to identify non-Mendel sites.
+\item Removed non-Mendel sites from VCF files.
+\item Turned into new PED / MAP files.
+\item Ran with family-style \verb+--duohmm+. Looked at switch error rate among samples from the haplotype graph. I only looked at the family because smart folks had suggested to me that those should phase perfectly. Not at all the case. Switch error rate was incredibly high -- 5\% to 40\%! Decided that the switch error rate for the family was too high and I could not use them AT ALL as my reference haplotype set, as I had intended.
+\item Took the non-mendel, filtered VCF files and recoded them so that \"fake polyallelics\" were biallelics and removed indels.
+\item Took these and started the PIR process.
+\end{enumerate}
+
+\labday{Monday, 18 August 2014}
+Turns out all the jobs I had submitted for the assemble mode of ShapeIt failed with the dreaded overflow error. I looked at the jobs for a while, and it come to seem that was because I included the family samples. So, I backtracked my analyses to only include the unrelated zebrafinches, which required me to create the \verb+*filtered.recoded_biallelicSNPs*vcf+ files from the coverage filtered files. After that, I restarted the PIR finding, as standard, and then restarted the assembling. Slowly but surely! \\ 
+
+The other big hassle of today was trying to figure out why the \verb+make_seq_for_ldhelmet.py+ script was so slow. It essentially wasn't running for some chromosomes, which, it turns out is because I was having lists append to lists, which grows like $O(n)$. Lists are really funky with computational cost, so I need to be more careful how I use and employ them. I fixed it though.
+
+Spent some of the day working on my graduate school project on the Eugongylus skinks.
+
+I also identified the ancestral alleles for LTF using the following files.
+\begin{verbatim}
+vcf_in = '/mnt/gluster/home/sonal.singhal1/LTF/after_vqsr/by_chr/gatk.ug.ltf.%s.filtered.coverage.recoded_biallelicSNPs.vqsr.vcf.gz' % chr
+vcf_out1 = '/mnt/gluster/home/sonal.singhal1/ZF/after_vqsr/by_chr/gatk.ug.all_zf.%s.coverage.filtered.vqsr.vcf.gz' % chr
+vcf_out2 = '/mnt/gluster/home/sonal.singhal1/DBF/after_vqsr/by_chr/gatk.ug.dbf.%s.filtered.coverage.vqsr.vcf.gz' % chr
+out_file = '/mnt/gluster/home/sonal.singhal1/LTF/ancestral_allele/ancestral_allele.%s.csv' % chr
+genome_out1 = '/mnt/gluster/home/sonal.singhal1/ZF/masked_genome/ZF.masked_genome.fa'
+genome_out2 = '/mnt/gluster/home/sonal.singhal1/DBF/masked_genome/DBF.masked_genome.fa'
+\end{verbatim}
+
+\labday{Tuesday, 19 August 2014}
+In the hassle of restarting ZF yesterday, chromosome LG5 got lost along the way, so I had to restart it from scratch. \\
+
+I also identified the ancestral alleles for ZF using the following files.
+\begin{verbatim}
+vcf_in = '/mnt/gluster/home/sonal.singhal1/ZF/after_vqsr/by_chr/unrel_vcf/gatk.ug.unrel_zf.%s.coverage.filtered.recoded_biallelicSNPs.nomendel.vcf.gz' % chr
+vcf_out1 = '/mnt/gluster/home/sonal.singhal1/LTF/after_vqsr/by_chr/gatk.ug.ltf.%s.filtered.coverage.vqsr.vcf.gz' % chr
+vcf_out2 = '/mnt/gluster/home/sonal.singhal1/DBF/after_vqsr/by_chr/gatk.ug.dbf.%s.filtered.coverage.vqsr.vcf.gz' % chr
+out_file = '/mnt/gluster/home/sonal.singhal1/ZF/ancestral_allele/ancestral_allele.%s.csv' % chr
+genome_out1 = '/mnt/gluster/home/sonal.singhal1/LTF/masked_genome/LTF.masked_genome.fa'
+genome_out2 = '/mnt/gluster/home/sonal.singhal1/DBF/masked_genome/DBF.masked_genome.fa'
+\end{verbatim}
+
+I started investigating why ZF chr28 ShapeIt Assemble was failing, writing a script that runs it at a range of rhos and window sizes to see if that will get it to work.
+
+\labday{Wednesday, 20 August 2014}
+I wrote a script that takes the ancestral allele info and outputs it in LDhelmet format, which is pretty simple except it did show that I didn't define ancestral alleles at all sites. Looks like the last few sites in a few files never got named. I think it is because I forgot a return statement in one of my functions (previous work has shown that can lead to wonkiness). \\
+
+Turns out that I could get ZF chr28 ShapeIt assemble to work with rho=0.01 and window size=0.5, so chr28\_haplotypes.haps was found using these parameters. \\
+
+I also had troubles with ZF chr27 ShapeIt assemble, so I tried removing chunks of sites to identify the chunk of SNPs leading to problems (these scripts are all kept under \verb+chr27mystery_*.py+). In the end, I had to remove all SNPs from chromosome position 3090467 to 3251133 in order to get it to run. this subset would not run under a wide range of rhos, either, so it might just be a missing chunk of the recombination map. Olivier Deleneau has the subset of fussy SNPs and is working on it, theoretically. \\
+
+Phasing uncertainity for all LTF kept failing for the bigger chromosomes, so I edited the \verb+phasing_uncertainty_multisamples.py+ file so that you could specify the number of samples to take in. In doing so, it will require less memory. Right now, it required absurd amounts of memory for the bigger chromosomes. \\
+
+I then had to recalculate $\theta$, given that I had removed all singletons. So, I counted the number of segregating sites after all singletons were removed.
+\begin{itemize}
+\item LTF: 17145060 segregating sites, sequence length = 886164462
+\item ZF: 22918790 segregating sites, sequence length = 833787048
+\end{itemize}
+For zebrafinch, the total number of segregating sites is: 22918790. The total sequence length is: 833787048 bp. So, the segregating sites measure ($S_n$) is: $\frac{22918790}{833787048} = 0.02748$. Remember that $\theta = \frac{S_n}{a_n}$, where $a_n$ is $\frac{1}{1+\frac{1}{2}+\frac{1}{3} ... + \frac{1}{n - 1}}$. Here, $n=38$ because we have 19 diploid individuals. $a_{38} = 0.2317$, which means that $\theta = 0.1186$. Similarly, for longtailed finch, $S_n = \frac{17145060}{886164462} = 0.0193$ and $a_{40} = 0.229$, which means that $\theta = 0.0845$. \\
+
+\labday{Thursday, 21 August 2014}
+It turns out that my \verb+make_seq_for_ldhelmet.py+ script failed to account for masked sites, so I fixed that in the script and then remade the haplotype files. \\
+
+I was finally able to get phasing uncertainity for all LTF to finish after a few more buggy script fixes. \\
+
+I started to create the diploid sequences needed for PSMC for ZF and LTF (\verb+make_diploidsequence.py+). I am making one for every individual, even though PSMC only runs on one individual at a time. I figured that could be my way of bootstrapping. When I actually run PSMC, I will want to remember that I have two subspecies of LTF, and that could be useful somehow. \\
+
+I also started running LDhelmet. The first step is to find the haplotype configurations, which I did for all the chromosomes at once. It is hard for me to tell if that is the right way to do this, but it certainly seems like it is. It is really slow with all the chromosomes -- much slower than just doing one chromosome at a time. Makes me worry that it might be getting overrun in some way, but the memory is not scaling appreciably. The output file is a bit weird because it looks very similar no matter for what chromosome it is run. \\
+
+I also explored the next step of the process, which is running the table\_gen process for generating the likelihood table. It takes a lot of RAM (9 Gb) and is quite slow, but like LDhat, I should only have to do it the once for all my samples. \\
+
+I also explored the difference between using the simple\_pe comand and not in qsub. It looks like not calling it and just asking for multiple threads works more quickly. That seems weird, to me.
+
+\labday{Friday, 22 August 2014}
+The \verb+find_confs+ subroutine of \verb+LDhelmet+ was running very slowly in its intial configuration, in which I had it find the configurations for all the chromosomes. In fact, it seemed to be not running at all. Well, I thought about it some more and decided that find\_confs must all be about the number of haplotypes and the window size, so would be the same for every chromosome in my dataset. I tested that using about 5 or 6 different chromosomes and compared the resulting configuration files across the chromosomes. In fact, they were all the same. (You can easily compare across files using the command \verb+diff+). \\
+
+Command used: \verb+echo "/mnt/lustre/home/sonal.singhal1/bin/LDhelmet_v1.6/ldhelmet find_confs --num_threads 12 -w 50 -o /mnt/gluster/home/sonal.singhal1/LTF/analysis/LDhelmet/chr1.conf /mnt/gluster/home/sonal.singhal1/LTF/phasing/PIR_approach/chr1_haplotypes.fasta" | qsub -l h_vmem=10g -cwd -V -j y -N 'chr1'+ \\
+
+I then started the \verb+table_gen+ procedure, which is very similar to how it works in LDhat, in the sense that it provides likelihood values for given rho values for the given haplotype configuration. I used the recommended binning of rho values that Chan provides in the LDhelmet book, which led to the following command. \\
+
+\verb+echo "/mnt/lustre/home/sonal.singhal1/bin/LDhelmet_v1.6/ldhelmet table_gen --num_threads 12 -c /mnt/gluster/home/sonal.singhal1/LTF/analysis/LDhelmet/LTF.conf -t 0.0845 -r 0.0 0.1 10.0 1.0 100.0 -o /mnt/gluster/home/sonal.singhal1/LTF/analysis/LDhelmet/LTF.lk" | qsub -l h_vmem=20g -cwd -V -j y -N 'lk'+
+
+
+\labday{Monday, 25 August 2014}
+Today, I did a random set of stuff.
+\begin{enumerate}
+\item I finally finished the ShapeIt PIR runs for ZF.
+\item I realized that, although I confirmed that all fasta files give the same find\_confs file as long as they have the same number of haplotypes, I did not confirm that multiple haplotype files give the same find\_confs file as a single one. So, I did some tests and confirmed that works.
+\item I killed and restarted the LDhat jobs, because I realized that I was running them with a higher memory command than they needed, and also because I had organized the output files in such a way that made it really hard to keep the files organized and not overflowing my machine. The jobs only take, on average, 360M.
+\item I realized that for LDhelmet sites for which I didn't have a defined ancestral site, I was setting the probability of a base as being 0.25 for all four nucleotides, but that doesn't really make sense because they don't exist in equal proportions. So, I calculated the relative frequencies of each nucleotide and used those instead. I redid both the ZF and LTF ancestral sites.
+\begin{tabular}{ c c c }
+  A & 278825570 & 0.29 \\
+  C & 207581703 & 0.21 \\
+  T & 279023215 & 0.29 \\
+  G & 207672526 & 0.21 \\
+\end{tabular}
+\item I also generated the fasta files for LDhelmet for ZF, again removing all singleton sites.
+\item I also generated the table\_gen for ZF, using the following command.
+\verb+echo "/mnt/lustre/home/sonal.singhal1/bin/LDhelmet_v1.6/ldhelmet table_gen --num_threads 12 -c /mnt/gluster/home/sonal.singhal1/ZF/analysis/LDhelmet/ZF.conf -t 0.119 -r 0.0 0.1 10.0 1.0 100.0 -o /mnt/gluster/home/sonal.singhal1/ZF/analysis/LDhelmet/ZF.lk" | qsub -l h_vmem=20g -cwd -V -j y -N 'lk'+
+\item I generated the pade table for LTF, using the following command.
+\verb+echo "/mnt/lustre/home/sonal.singhal1/bin/LDhelmet_v1.6/ldhelmet pade --num_threads 12 -c /mnt/gluster/home/sonal.singhal1/LTF/analysis/LDhelmet/LTF.conf -t 0.0845 -x 11 -o /mnt/gluster/home/sonal.singhal1/LTF/analysis/LDhelmet/LTF.pade" | qsub -l h_vmem=20g -cwd -V -j y -N 'pade'+
+\item And then finally, I tried to get PSMC going. I had already generated the diploid files, as directed. Then, I turned them into FASTQ files with quality score of 40 at every site, because I had already done the necessary quality filtering. And then I turned them into the PSMC-Fasta format, which counts the number of heterozygotes in a given window chunk. I used window size of 10 and 100 bp, but both failed with some sort of segmentation error fault when I ran the following command:
+\verb+~/bin/psmc/psmc -N25 -t15 -r5 -p "4+25*2+4+6" -o /mnt/gluster/home/sonal.singhal1/ZF/analysis/PSMC/test.psmc /mnt/gluster/home/sonal.singhal1/ZF/analysis/PSMC/26462.psmcfa+
+I will have to keep playing with it to figure out what is going on.
+\end{enumerate}
+
+\labday{Tuesday, 26 August 2014}
+I had two paper reviews due this week, so I took part of today to work on both. \\
+
+I also ran pade for ZF/
+\verb+echo "/mnt/lustre/home/sonal.singhal1/bin/LDhelmet_v1.6/ldhelmet pade --num_threads 12 -c /mnt/gluster/home/sonal.singhal1/ZF/analysis/LDhelmet/ZF.conf -t 0.119 -x 11 -o /mnt/gluster/home/sonal.singhal1/ZF/analysis/LDhelmet/ZF.pade" | qsub -l h_vmem=20g -cwd -V -j y -N 'pade'+ \\
+
+Need to figure out the right block penalty, which is best done through simulations. But, I have no good parameters for the simulations because I have no block penalty! A bit of a Catch-22. So, I will try with what seems like two reasonable block penalty (5 and 50) and get a few chromosomes worth of data, and work from there. \\
+
+LDhelmet ancestral allele is in index 0 not index 1! Changed. \\
+
+I also started some preliminary runs for the MCMC portion of things, which looked something like this. These will be used to get the right block penalty, and then I will run them again, probably with more MCMC chains.
+\verb+/mnt/lustre/home/sonal.singhal1/bin/LDhelmet_v1.6/ldhelmet rjmcmc --num_threads 12 -o /mnt/gluster/home/sonal.singhal1/ZF/analysis/LDhelmet/chr1.bpen5 -n 1000000 --burn_in 100000 -b 5 -s /mnt/gluster/home/sonal.singhal1/ZF/phasing/PIR_approach/chr1_haplotypes.fasta -l /mnt/gluster/home/sonal.singhal1/ZF/analysis/LDhelmet/ZF.lk -p /mnt/gluster/home/sonal.singhal1/ZF/analysis/LDhelmet/ZF.pade -a /mnt/gluster/home/sonal.singhal1/ZF/ancestral_allele/ancestral_allele.chr1.ldhelmet.txt -m /mnt/gluster/home/sonal.singhal1/ZF/analysis/mutation_matrix.txt -w 50+ 
+
+\labday{Wednesday, 27 August 2014}
+I spent the first half of the day messing around with the preliminary runs of LDhelmet and trying to figure out what the recombination maps looked like, without going through the fuss of actually plotting them. (Too lazy.) Things looked okay, though I will certainly need to take more time to figure out the right block penalty, because the recombination map is quite different n the birds compared to humans. \\
+
+I also took some time to create alignments for gene trees, which first entailed creating genomes that reflect all the haplotypes. I had to redo this from the exisitng haplotypes because I needed these to include singletons, too. I also wanted to include G\_fortis as an outgroup, so that took some finessing.
+
+\labday{Thursday, 28 August 2014}
+I did more paper reviews today, turning both of them in. \\
+
+I finally made the gene trees, for which I randomly selected 1000 genomic segments of 1000 bp each from across the autosomes in proportion to the chromosome length. I masked for coverage, but ensured that I only considered genomic segments for which 75\% of the segment had sufficient coverage at all 3 ingroups. I included G\_fortis as an outgroup. I inferred model choice using \verb+MrAIC.pl+, with AICc as the model picker because the number of parameters was far greater than the number of tips. I then inferred the trees using PHYML. It took over 10 hours on 10 clusters to do the 1000 trees! \\
+
+\labday{Friday, 29 August 2014}
+I used Liang Liu's programs STAR and STEAC on a random set of 1000 gene trees, each of which included all haplotyepes. It took me a while because these programs only work with an old version of R, and that took a while to figure out. Also, it turns otu that I hadn't kept my code from before (muy sad face), so I had to recreate it. (But, I have it now on my local computer!) Both approaches gave the same species tree. Great; these data are stored on my local computer, under \verb+analysis/species_tree+. I plotted this species tree with the original gene trees, but to make it easier to visualize, I plotted them after reducing each tip to 2 or 4 haplotypes, and then removing the outgroup, and then making them ultrametric. I plotted using DensiTree. \\
+
+I started \verb+*BEAST+ runs using Beast 2.0 on a random set of 50 genes. I used a strict clock to help force along convergence. Might try again with uncorrelated clock to see how that goes, but given that phylogeny isn't central to this work, it might not be crucial. Again, I used G\_fortis as the outgroup, and I included all sampled haplotypes (N=40 for LTF, 38 for ZF, 2 for DBF, 2 for the outgroup). \\
+
+I plotted SFS using the ancestral allele information on my local computer in the \verb+sfs.ipynb+ notebook.
+
+I finally finished the phasing uncertainty for ZF! The bigger chromosomes had to be cut down in sample number significantly in order to get things to go. \\
+
+As it would turn out, most of the RJMCMC runs weren't horribly long, so I will run the main ones with the recommended chain length (3$\times$) and then run some other samples with fewer chain iterations to ensure switch error rate isn't leading to false results.
+
+\labday{Tuesday, 2 September 2014}
+I am an idiot. I calculated theta wrong. The harmonic sum is **not** divided by 1.
+\begin{tabular}{ c c c c c c c}
+species & sites & SS & seq_length & prop SS & $a_n$ & theta & $N_e$ \\
+ZF  & all & 48726579 & 859594837 & 0.0567 & 4.202 & 0.0135 & 3.37e6 \\
+LTF & all & 27995773 & 897015175 & 0.0312 & 4.253 & 0.00734 & 1.84e6 \\
+ZF & no singletons & 22918790 & 833787048 & 0.02748 & 4.202 & 0.00654 & NA \\
+LTF & no singletons & 17145060 & 886164462 & 0.0193 & 4.253 & 0.00454 & NA \\
+\end{tabular}
+
+Need to rerun lk and pade steps.
+\verb+echo "/mnt/lustre/home/sonal.singhal1/bin/LDhelmet_v1.6/ldhelmet table_gen --num_threads 12 -c /mnt/gluster/home/sonal.singhal1/ZF/analysis/LDhelmet/ZF.conf -t 0.00654 -r 0.0 0.1 10.0 1.0 100.0 -o /mnt/gluster/home/sonal.singhal1/ZF/analysis/LDhelmet/ZF.lk" | qsub -l h_vmem=20g -cwd -V -j y -N 'zf_lk'+
+\verb+echo "/mnt/lustre/home/sonal.singhal1/bin/LDhelmet_v1.6/ldhelmet table_gen --num_threads 12 -c /mnt/gluster/home/sonal.singhal1/LTF/analysis/LDhelmet/LTF.conf -t 0.00454 -r 0.0 0.1 10.0 1.0 100.0 -o /mnt/gluster/home/sonal.singhal1/LTF/analysis/LDhelmet/LTF.lk" | qsub -l h_vmem=20g -cwd -V -j y -N 'lf_lk'+
+
+*species trees - *BEAST -- could run for longer, but fine
+*recombination map graphs
+
+\labday{Wednesday, 3 September 2014}
+*rerun pade
+\verb+echo "/mnt/lustre/home/sonal.singhal1/bin/LDhelmet_v1.6/ldhelmet pade --num_threads 12 -c /mnt/gluster/home/sonal.singhal1/ZF/analysis/LDhelmet/ZF.conf -t 0.00654 -x 11 -o /mnt/gluster/home/sonal.singhal1/ZF/analysis/LDhelmet/ZF.pade" | qsub -l h_vmem=20g -cwd -V -j y -N 'zf_pade'+ \\
+\verb+echo "/mnt/lustre/home/sonal.singhal1/bin/LDhelmet_v1.6/ldhelmet pade --num_threads 12 -c /mnt/gluster/home/sonal.singhal1/LTF/analysis/LDhelmet/LTF.conf -t 0.00454 -x 11 -o /mnt/gluster/home/sonal.singhal1/LTF/analysis/LDhelmet/LTF.pade" | qsub -l h_vmem=20g -cwd -V -j y -N 'lt_pade'+
+*find_hotspots
+*smoothed graphs & proportion graphs
+*graph uncertainty 
+*graph intersection of both
+
+\labday{Thursday, 4 September 2014}
+*wrote up pipeline for alison
+*researched PSMC
+*figured out PSMC -- how many chromosomes can I run? turns out all of them BUT z-chromosome
+*number of recombinations (<20) too low for iterations 57/58 - 63
+*tried to generate ms files for simulations; too slow, will need to switch to MAcS
+
+\labday{Friday, 5 September 2014}
+*change ancestral allele freq again
+A 0.303
+C 0.197
+T 0.305
+G 0.195
+* all day in simulations
+\verb+echo "/mnt/lustre/home/sonal.singhal1/bin/LDhelmet_v1.6/ldhelmet table_gen --num_threads 12 -c /mnt/gluster/home/sonal.singhal1/ZF/analysis/LDhelmet/simulations/simulation.conf -t 0.0135 -r 0.0 0.1 10.0 1.0 100.0 -o /mnt/gluster/home/sonal.singhal1/ZF/analysis/LDhelmet/simulations/simulation.lk" | qsub -l h_vmem=20g -cwd -V -j y -N 'lk'+
+I generated the pade table for ZF, using the following command.
+\verb+echo "/mnt/lustre/home/sonal.singhal1/bin/LDhelmet_v1.6/ldhelmet pade --num_threads 12 -c /mnt/gluster/home/sonal.singhal1/ZF/analysis/LDhelmet/simulations/simulation.conf -t 0.0135 -x 11 -o /mnt/gluster/home/sonal.singhal1/ZF/analysis/LDhelmet/simulations/simulation.pade" | qsub -l h_vmem=20g -cwd -V -j y -N 'pade'+
+
+\labday{Monday, 8 September 2014}
+*started simulation runs on LDhelmet
+*wrote scripts to run post_to_text and to compare actual and estimated
+*initial psmc runs had no recombination events in least intervals 59 - 64
+--also looked like could get more info in near present, so trying with more free parameters
+4+25*2+4+6 
+4+25*2+5 
+27*2+5+5 
+27*2+5 
+4*1+25*2+5 
+4*1+25*2 
+30*2 
+25*2 + 5 + 5 
+25*2 + 5 
+2 + 25*2 + 2 
+*removed Z chromosome from PSMC files
+*created PSMC files with s 50
+*spent all afternoon trying to compile msmc; it was already in /data/tools
+
+\labday{Tuesday, 9 September 2014}
+*Explore other PSMC
+4+25*2+4+6 - 63 insufficient
+4+25*2+5 - 58 insufficient
+27*2+5+5 - 64 insufficent
+27*2+5 - 58 insufficient
+4*1+25*2+5 - 58 insufficient
+4*1+25*2 - 53 insufficient
+30*2 - 59 insufficient
+25*2 + 5 + 5 - 59 insufficient
+25*2 + 5  - 54 insufficient
+2 + 25*2 + 2 - 53 insufficient
+--having more free parameters close to the front leads to huge inferred population sizes
+*ZF & LTF: PSMC for Ne
+*treemix amke files -- took some work bc of wanted to split up LTF
+*bpen -- higher block penalty (500) did better in low recombination areas and lower block penalty (10 or 50) did better in high recombination areas. 100 did fairly well in all, so will go with that; also organized simulation files
 
 \end{document}
