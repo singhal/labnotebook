@@ -656,82 +656,186 @@ As it would turn out, most of the RJMCMC runs weren't horribly long, so I will r
 
 \labday{Tuesday, 2 September 2014}
 I am an idiot. I calculated theta wrong. The harmonic sum is **not** divided by 1.
-\begin{tabular}{ c c c c c c c}
-species & sites & SS & seq_length & prop SS & $a_n$ & theta & $N_e$ \\
+\begin{tabular}{ c c c c c c c c}
+species & sites & SS & $seq_length$ & prop SS & $a_n$ & theta & $N_e$ \\
 ZF  & all & 48726579 & 859594837 & 0.0567 & 4.202 & 0.0135 & 3.37e6 \\
 LTF & all & 27995773 & 897015175 & 0.0312 & 4.253 & 0.00734 & 1.84e6 \\
 ZF & no singletons & 22918790 & 833787048 & 0.02748 & 4.202 & 0.00654 & NA \\
 LTF & no singletons & 17145060 & 886164462 & 0.0193 & 4.253 & 0.00454 & NA \\
-\end{tabular}
+\end{tabular} \\
 
-Need to rerun lk and pade steps.
+I needed to rerun lk and pade steps for both species with the updated thetas.
 \verb+echo "/mnt/lustre/home/sonal.singhal1/bin/LDhelmet_v1.6/ldhelmet table_gen --num_threads 12 -c /mnt/gluster/home/sonal.singhal1/ZF/analysis/LDhelmet/ZF.conf -t 0.00654 -r 0.0 0.1 10.0 1.0 100.0 -o /mnt/gluster/home/sonal.singhal1/ZF/analysis/LDhelmet/ZF.lk" | qsub -l h_vmem=20g -cwd -V -j y -N 'zf_lk'+
 \verb+echo "/mnt/lustre/home/sonal.singhal1/bin/LDhelmet_v1.6/ldhelmet table_gen --num_threads 12 -c /mnt/gluster/home/sonal.singhal1/LTF/analysis/LDhelmet/LTF.conf -t 0.00454 -r 0.0 0.1 10.0 1.0 100.0 -o /mnt/gluster/home/sonal.singhal1/LTF/analysis/LDhelmet/LTF.lk" | qsub -l h_vmem=20g -cwd -V -j y -N 'lf_lk'+
 
-*species trees - *BEAST -- could run for longer, but fine
-*recombination map graphs
+I generated species trees from *BEAST (the result is in my home computer). I could run for longer, because the ESS values are a bit low, but it is fine for now. The species tree with dated nodes is same in topology as the STEAC/STAR tree but it has much shallower nodes for the two LTF subspecies. \\
+
+I also generated a few recombination map graphs to display the initial recombination maps, all of which are in an iPython notebook on my local computer.
 
 \labday{Wednesday, 3 September 2014}
-*rerun pade
+I reran pade with the updated thetas.
 \verb+echo "/mnt/lustre/home/sonal.singhal1/bin/LDhelmet_v1.6/ldhelmet pade --num_threads 12 -c /mnt/gluster/home/sonal.singhal1/ZF/analysis/LDhelmet/ZF.conf -t 0.00654 -x 11 -o /mnt/gluster/home/sonal.singhal1/ZF/analysis/LDhelmet/ZF.pade" | qsub -l h_vmem=20g -cwd -V -j y -N 'zf_pade'+ \\
 \verb+echo "/mnt/lustre/home/sonal.singhal1/bin/LDhelmet_v1.6/ldhelmet pade --num_threads 12 -c /mnt/gluster/home/sonal.singhal1/LTF/analysis/LDhelmet/LTF.conf -t 0.00454 -x 11 -o /mnt/gluster/home/sonal.singhal1/LTF/analysis/LDhelmet/LTF.pade" | qsub -l h_vmem=20g -cwd -V -j y -N 'lt_pade'+
-*find_hotspots
-*smoothed graphs & proportion graphs
-*graph uncertainty 
-*graph intersection of both
+\\
+
+I wrote a script to identify hotspots, given that the 20kb of flanking sequence on either side has to have 10$\times$ lower recombination than the focal sequence. I found a lot, though I am pretty skeptical of most of them. I think this is because there is a lot of variation in overall recombination rate across the chromosome, and to me, that is the bigger story. But, I suppose the true is same for humans. 
+
+I continued work on graphing recombination, making graphs of the smoothed recombination rate across chromosomes and a graph that showed how proportion of genetic length changed with proportion of sequence. Also, it turned out that I had never graphed the final results from the phasing uncertainty, so I graphed those too. There is a lot more uncertainty than I would like -- on average, 5\% or so. I also looked to see if there was any correlation between uncertainty and recombination rate, and there was -- the two values are correlated around $r=0.22$ which is (of course) significant given the huge number of points included. I am somewhat concerned about this -- Molly had mentioned masking any genomic regions in which uncertainty is too high, but we might get rid of everything interesting if we do that. It could also be that uncertainty is correlated with SNP density (even though I divided by that), which could explain these patterns.
 
 \labday{Thursday, 4 September 2014}
-*wrote up pipeline for alison
-*researched PSMC
-*figured out PSMC -- how many chromosomes can I run? turns out all of them BUT z-chromosome
-*number of recombinations (<20) too low for iterations 57/58 - 63
-*tried to generate ms files for simulations; too slow, will need to switch to MAcS
+I am loosely collaborating with Allison Lansverk and Chris Balakrishnan, both of whom are at NCSU, on their work looking at zebrafinch in two ways (1) signals of domestication and (2) what is going on the with the Lesser Sunday zebrafinch. Their sampling design is interesting -- they only sampled 3$\times$ for each individual, so genotype calling is going to be tricky (they only sampled 20 individuals). Anyways, I spent most of my morning summarizing across the pipelines we used for them. Oh! The other tricky thing they did is that they sampled some museum skins. Uf. These data won't be easy. \\
+
+I then spent some time researching PSMC, to figure out what sort of plots look normal and the sorts of data and parameter values people use when running them. I had heard that PSMC plots all tend to look the same, but I didn't see that at all. \\
+
+I was having a lot of trouble figuring why PSMC wouldn't run, so I tried some iterative PSMC runs to see what would work. It turns out that everything is fine, but I just couldn't include the Zchromosome. \\
+
+In my initial runs, the number of recombinations (<20) was too low for iterations 57/58 - 63. I will have to mess around with that for the next set of runs. \\
+
+I also wrote a script to generate fasta files for the block penalty simulations, but they were way too slow. So, I will need to switch to MAcS despite the concerns with this program.
 
 \labday{Friday, 5 September 2014}
-*change ancestral allele freq again
-A 0.303
-C 0.197
-T 0.305
-G 0.195
-* all day in simulations
-\verb+echo "/mnt/lustre/home/sonal.singhal1/bin/LDhelmet_v1.6/ldhelmet table_gen --num_threads 12 -c /mnt/gluster/home/sonal.singhal1/ZF/analysis/LDhelmet/simulations/simulation.conf -t 0.0135 -r 0.0 0.1 10.0 1.0 100.0 -o /mnt/gluster/home/sonal.singhal1/ZF/analysis/LDhelmet/simulations/simulation.lk" | qsub -l h_vmem=20g -cwd -V -j y -N 'lk'+
-I generated the pade table for ZF, using the following command.
-\verb+echo "/mnt/lustre/home/sonal.singhal1/bin/LDhelmet_v1.6/ldhelmet pade --num_threads 12 -c /mnt/gluster/home/sonal.singhal1/ZF/analysis/LDhelmet/simulations/simulation.conf -t 0.0135 -x 11 -o /mnt/gluster/home/sonal.singhal1/ZF/analysis/LDhelmet/simulations/simulation.pade" | qsub -l h_vmem=20g -cwd -V -j y -N 'pade'+
+In preparing for my simulations, I figured out that the stationary frequencies for alleles was a bit off (I hadn't accounted properly for mutational biases). These are the new values, which I changed to be the default priors for unknown bases in LDhelmet.
+\begin{tabular}{c c}
+A & 0.303 \\
+C & 0.197 \\
+T & 0.305 \\
+G & 0.195 \\
+\end{tabular}
+
+I spent the rest of the day working on the simulations. It took a while to get them going because it is a pretty complicated set of commands, but it looks to be working now. I generated the fasta files and the ancestral allele files through the script, and then I generated the conf/lk/pade files through the command line sung the following commands. \\
+\verb+echo "/mnt/lustre/home/sonal.singhal1/bin/LDhelmet_v1.6/ldhelmet table_gen --num_threads 12 -c /mnt/gluster/home/sonal.singhal1/ZF/analysis/LDhelmet/simulations/simulation.conf -t 0.0135 -r 0.0 0.1 10.0 1.0 100.0 -o /mnt/gluster/home/sonal.singhal1/ZF/analysis/LDhelmet/simulations/simulation.lk" | qsub -l h_vmem=20g -cwd -V -j y -N 'lk'+ \\
+\verb+echo "/mnt/lustre/home/sonal.singhal1/bin/LDhelmet_v1.6/ldhelmet pade --num_threads 12 -c /mnt/gluster/home/sonal.singhal1/ZF/analysis/LDhelmet/simulations/simulation.conf -t 0.0135 -x 11 -o /mnt/gluster/home/sonal.singhal1/ZF/analysis/LDhelmet/simulations/simulation.pade" | qsub -l h_vmem=20g -cwd -V -j y -N 'pade'+ \\
 
 \labday{Monday, 8 September 2014}
-*started simulation runs on LDhelmet
-*wrote scripts to run post_to_text and to compare actual and estimated
-*initial psmc runs had no recombination events in least intervals 59 - 64
---also looked like could get more info in near present, so trying with more free parameters
-4+25*2+4+6 
+I started simulation runs on LDhelmet, and I wrote scripts to run \verb+post_to_text+ and to compare actual and estimated recombination.
+
+Initial psmc runs had no recombination events in least intervals 59 - 64
+--also looked like could get more info in near present, so trying with more free parameters.
+\begin{verbatim}
+4+25*2+4+6  
 4+25*2+5 
 27*2+5+5 
 27*2+5 
-4*1+25*2+5 
+4*1+25*2+5  
 4*1+25*2 
 30*2 
-25*2 + 5 + 5 
-25*2 + 5 
-2 + 25*2 + 2 
-*removed Z chromosome from PSMC files
-*created PSMC files with s 50
-*spent all afternoon trying to compile msmc; it was already in /data/tools
+25*2+5+5  
+25*2+5 
+2+25*2+2 
+\end{verbatim}
+
+In the mean time, I removed Z chromosome from PSMC files and I created PSMC files with a window of 50. \\
+
+I spent all afternoon trying to compile msmc -- it was tricky because it uses D for compiling. I failed and failed and failed, and then,  it turns out that it was already in \verb+/data/tools+.
 
 \labday{Tuesday, 9 September 2014}
-*Explore other PSMC
-4+25*2+4+6 - 63 insufficient
-4+25*2+5 - 58 insufficient
-27*2+5+5 - 64 insufficent
-27*2+5 - 58 insufficient
-4*1+25*2+5 - 58 insufficient
-4*1+25*2 - 53 insufficient
-30*2 - 59 insufficient
-25*2 + 5 + 5 - 59 insufficient
-25*2 + 5  - 54 insufficient
-2 + 25*2 + 2 - 53 insufficient
---having more free parameters close to the front leads to huge inferred population sizes
-*ZF & LTF: PSMC for Ne
-*treemix amke files -- took some work bc of wanted to split up LTF
-*bpen -- higher block penalty (500) did better in low recombination areas and lower block penalty (10 or 50) did better in high recombination areas. 100 did fairly well in all, so will go with that; also organized simulation files
+I explored the other PSMC results. \\
+\begin{verbatim}
+4+25*2+4+6 - 63 insufficient 
+4+25*2+5 - 58 insufficient 
+27*2+5+5 - 64 insufficent 
+27*2+5 - 58 insufficient 
+4*1+25*2+5 - 58 insufficient 
+4*1+25*2 - 53 insufficient 
+30*2 - 59 insufficient 
+25*2 + 5 + 5 - 59 insufficient 
+25*2 + 5  - 54 insufficient 
+2 + 25*2 + 2 - 53 insufficient 
+\end{verbatim}
+It turns out that having more free parameters close to the front leads to huge inferred population sizes. So, I went ahead and used the suggested one, even though it leads to insufifcient number of recombinations in the last interval. These results also look a little weird, but I will talk to Molly about them. I went ahead and ran PSMC for all ZF and LTF. Now need to plot.
+
+I also made files for treemix. It took some work because Iwanted to split up LTF. Those are made, though they are huge, so I will probably subsample. I also created them with and without DBF, because initial runs showed that including DBF resulted in some funky results -- maybe because DBF only has $N=2$?
+
+I looked at the simulation results. Higher block penalty (500) did better in low recombination areas and lower block penalty (10 or 50) did better in high recombination areas. 100 did fairly well in all, so will go with that. I also reorganized the simulation files so that things look neater, but now my scripts won't work out of the box.
+
+\labday{Wednesday, 10 September 2014}
+I killed the rjmcmc jobs and started again to do species one at a time, and to use just 9 processors at a time. (Otherwise, my runs take up all my available cluster space). \\
+
+I ran PSMC for DBF. \\
+
+I ran TreeMix for these populations.
+\begin{verbatim}
+/data/tools/treemix/treemix -i treemix_auts_inclDBF.txt.gz -o treemix_auts_inclDBF_tree -k 1000 -m 3 -root pop4
+/data/tools/treemix/treemix -i treemix_auts_woDBF.txt.gz -o treemix_auts_woDBF_tree -k 1000 -m 2 -root pop1
+/data/tools/treemix/treemix -i treemix_auts_inclDBF_sub.txt.gz -o treemix_auts_inclDBF_sub_tree -k 100 -m 3 -root pop4
+/data/tools/treemix/treemix -i treemix_auts_woDBF_sub.txt.gz -o treemix_auts_woDBF_sub_tree -m 2 -k 100 -root pop1
+\end{verbatim}
+
+I continued my work on MSMC.
+
+\labday{Thursday, 11, September 2014}
+I plotted the TreeMix and PSMC results and showed to Molly. Molly suggested the Treemix results should be explored using the 4-tip test and suggested that the PSMC results were off. She wanted me to generate them again with block size of 10. \\
+
+I had to remake MSMC files because they need to be by chromosome and because I forgot to account for masked sites. Even with the right format, they still kept failing. I will try again with fewer chromosomes. \\
+
+To figure out mu, there are two ways.
+\begin{enumerate}
+\item I can use the number of cell divisions in a bird between sperm and zygote and egg and zygote, and multiply by $10^{-10}$ to get an approximate number of divisions. In birds, the number of cell divisions is 32 for males, so that would give 3.2e-9.
+\item I can take the relationship between $\theta$ and $\rho$, and divide to find $\mu$ given $c$. In this case, $\theta$ in the ZF is 0.0135. $c$, based on Ellegren's work, is somewhere between 1.3 cM/MB - 1.43 cM/MB, or 1.3e-8 to 1.4e-8. $\rho$ is to be determined. 
+\end{enumerate}
+
+\labday{Friday, 12, September 2014}
+Need to downsample the MSMC data so that it will actually run. Do not want to subsample randomly because the program uses linkage info, so I will try running with chromosomes.
+\begin{itemize}
+\item LTF -- 13e6 SNPs across all.
+\begin{itemize}
+\item 5\% : 650,000 : chr10  + chr11, chr7 + chr8
+\item 10\%: 1.3e6   : chr1, chr1A + chr6 
+\item 20\%: 2.6e6   : chr1 + chr3, chr2 + chr5
+\item 30\%: 3.9e6   : chr1 + chr1A + chr3, chr3 + chr4 + chr5
+\end{itemize}
+\item ZF -- 18e6 SNPs across all
+\begin{itemize}
+\item 5\%:  900,000 : chr10 + chr11, chr13 + chr14 + chr17
+\item 10\%: 1.8e6   : chr1A + chr12, chr1
+\item 20\%: 3.6e6   : chr2, chr4 + chr5
+\item 30\%: 5.4e6   : chr1 + chr1A + chr4, chr2 + chr3
+\end{itemize}
+\end{itemize}
+
+This results in the following commands.
+\begin{verbatim}
+/data/tools/msmc -o LTF10_11.msmc -t 12 -P 0,0,0,0,1,1,1,1 --fixedRecombination /mnt/gluster/home/sonal.singhal1/LTF/analysis/msmc/LTF_chr10.msmc /mnt/gluster/home/sonal.singhal1/LTF/analysis/msmc/LTF_chr11.msmc
+/data/tools/msmc -o LTF7_8.msmc -t 12 -P 0,0,0,0,1,1,1,1 --fixedRecombination /mnt/gluster/home/sonal.singhal1/LTF/analysis/msmc/LTF_chr7.msmc /mnt/gluster/home/sonal.singhal1/LTF/analysis/msmc/LTF_chr8.msmc 
+/data/tools/msmc -o LTF1.msmc -t 12 -P 0,0,0,0,1,1,1,1 --fixedRecombination /mnt/gluster/home/sonal.singhal1/LTF/analysis/msmc/LTF_chr1.msmc 
+/data/tools/msmc -o LTF1A_6.msmc -t 12 -P 0,0,0,0,1,1,1,1 --fixedRecombination /mnt/gluster/home/sonal.singhal1/LTF/analysis/msmc/LTF_chr1A.msmc /mnt/gluster/home/sonal.singhal1/LTF/analysis/msmc/LTF_chr6.msmc 
+/data/tools/msmc -o LTF1_3.msmc -t 12 -P 0,0,0,0,1,1,1,1 --fixedRecombination /mnt/gluster/home/sonal.singhal1/LTF/analysis/msmc/LTF_chr1.msmc /mnt/gluster/home/sonal.singhal1/LTF/analysis/msmc/LTF_chr3.msmc
+/data/tools/msmc -o LTF2_5.msmc -t 12 -P 0,0,0,0,1,1,1,1 --fixedRecombination /mnt/gluster/home/sonal.singhal1/LTF/analysis/msmc/LTF_chr2.msmc /mnt/gluster/home/sonal.singhal1/LTF/analysis/msmc/LTF_chr5.msmc
+/data/tools/msmc -o LTF1_1A_3.msmc -t 12 -P 0,0,0,0,1,1,1,1 --fixedRecombination /mnt/gluster/home/sonal.singhal1/LTF/analysis/msmc/LTF_chr1.msmc /mnt/gluster/home/sonal.singhal1/LTF/analysis/msmc/LTF_chr1A.msmc /mnt/gluster/home/sonal.singhal1/LTF/analysis/msmc/LTF_chr3.msmc
+/data/tools/msmc -o LTF3_4_5.msmc -t 12 -P 0,0,0,0,1,1,1,1 --fixedRecombination /mnt/gluster/home/sonal.singhal1/LTF/analysis/msmc/LTF_chr3.msmc /mnt/gluster/home/sonal.singhal1/LTF/analysis/msmc/LTF_chr4.msmc /mnt/gluster/home/sonal.singhal1/LTF/analysis/msmc/LTF_chr5.msmc 
+/data/tools/msmc -o ZF10_11.msmc -t 12 -P 0,0,0,0,0,0,0,0 --fixedRecombination /mnt/gluster/home/sonal.singhal1/ZF/analysis/msmc/ZF_chr10.msmc /mnt/gluster/home/sonal.singhal1/ZF/analysis/msmc/ZF_chr11.msmc
+/data/tools/msmc -o ZF13_14_17.msmc -t 12 -P 0,0,0,0,0,0,0,0 --fixedRecombination /mnt/gluster/home/sonal.singhal1/ZF/analysis/msmc/ZF_chr13.msmc /mnt/gluster/home/sonal.singhal1/ZF/analysis/msmc/ZF_chr14.msmc /mnt/gluster/home/sonal.singhal1/ZF/analysis/msmc/ZF_chr17.msmc 
+/data/tools/msmc -o ZF1A_12.msmc -t 12 -P 0,0,0,0,0,0,0,0 --fixedRecombination /mnt/gluster/home/sonal.singhal1/ZF/analysis/msmc/ZF_chr1A.msmc /mnt/gluster/home/sonal.singhal1/ZF/analysis/msmc/ZF_chr12.msmc
+/data/tools/msmc -o ZF1.msmc -t 12 -P 0,0,0,0,0,0,0,0 --fixedRecombination /mnt/gluster/home/sonal.singhal1/ZF/analysis/msmc/ZF_chr1.msmc
+/data/tools/msmc -o ZF2.msmc -t 12 -P 0,0,0,0,0,0,0,0 --fixedRecombination /mnt/gluster/home/sonal.singhal1/ZF/analysis/msmc/ZF_chr2.msmc
+/data/tools/msmc -o ZF4_5.msmc -t 12 -P 0,0,0,0,0,0,0,0 --fixedRecombination /mnt/gluster/home/sonal.singhal1/ZF/analysis/msmc/ZF_chr4.msmc /mnt/gluster/home/sonal.singhal1/ZF/analysis/msmc/ZF_chr5.msmc
+/data/tools/msmc -o ZF1_1A_4.msmc -t 12 -P 0,0,0,0,0,0,0,0 --fixedRecombination /mnt/gluster/home/sonal.singhal1/ZF/analysis/msmc/ZF_chr1.msmc /mnt/gluster/home/sonal.singhal1/ZF/analysis/msmc/ZF_chr1A.msmc /mnt/gluster/home/sonal.singhal1/ZF/analysis/msmc/ZF_chr4.msmc
+/data/tools/msmc -o ZF2_3.msmc -t 12 -P 0,0,0,0,0,0,0,0 --fixedRecombination /mnt/gluster/home/sonal.singhal1/ZF/analysis/msmc/ZF_chr2.msmc /mnt/gluster/home/sonal.singhal1/ZF/analysis/msmc/ZF_chr3.msmc
+\end{verbatim}
+
+\labday{Friday, 19, September 2014}
+I was on vacation for the last four days and was delayed because spudhead was down for most of the day. \\
+
+I worked on MSMC again, make files again with fewer haplotypes (4) and will run again.
+
+\labday{Week of 22 - 26 September 2014}
+\begin{itemize}
+\item PSMC: all the runs finished during my vacation with the "window size" of 10, so I took them all and generated the plot. The LTF and ZF lineages coalesce now, but DBF still doesn't make it. However, the divergence times (using my makeshift estimate of $\mu$) look good and make sense, and you can see some evidence for variation between hecki and acuticauda ... so this all seems good.
+\item MSMC: the reduced sampling worked, but not for all SNP sets. But, when I plotted the initial results (using msmc.ipynb on my local computer), things looked really odd and not what I would have thought. They were more different than I would have thought, and it didn't match up with PSMC, and they "coalesced" much earlier than I would have thought. All in all, nothing much made sense. There are three possibilities here.
+\begin{enumerate}
+\item My data are phased incorrectly. That will add error.
+\item MSMC sucks. This could be as their simulations are kind of limited, and they don't do any bootstrapping.
+\item MSMC is the wrong program for my data. I get the sense that it is meant to capture more recent population history, but frankly, I do not understand the methods enough to be sure.
+\end{enumerate}
+Anyways, despite all this uncertainty, I went ahead and generated multiple MSMC files for each SNP set that worked, so that I can create effective bootstraps, both across comparable SNP sets and across different SNP sets. If things aren't congruent, I am not sure what to do...
+\item CoalHMM seemed like a good program to look across the three lineages and figure out how they are related, but Molly said no ... after I wasted a ton of time getting the file made and spending tons of time trying to install it. I wonder why it is not good. Is it because it isn't out of the power trifecta?
+\item TreeMix: I started running the 4 pop admixture test, to see if any of our populations are admixed. It is running very very slowly. The command I used was \verb+/mnt/lustre/home/sonal.singhal1/bin/treemix-1.12/fourpop -i /mnt/gluster/home/sonal.singhal1/ZF/analysis/treemix/treemix_auts_inclDBF.txt.gz -k 500+. I think the reason that it is so slow is because I have two many variants for that k. Maybe I should have increased k? If it doesn't finish in the next few days, I will.
+\item SNAPP: I spent more time than I would like to admit trying to get SNAPP files created. There were a number of problems, mainly that the BEAST manual is pretty vague about the input format. It turns out that FASTA files are not supported, that 0/1/2 format for alleles is not supported, and it isn't clear that IUPAC ambiguity codes are interpreted as one would hope. So, I created a gazillion and a half files, but I think that I now have the right script (\verb+make_snapp_files.py+) and the right file that will give the results I expect. I ended up subsampling both at the haplotype and the locus level because of everyone's warnings that this program is really really slow.
+\item Admixture: I created the input files for Admixture, both for all 4 lineages and just for LTF. I tried a number of subsampling regimes, but I ultimately landed upon a sampling scheme that made sense and gave about 300K SNPs. Along the way, I did it removing singletons, but Molly said no, so I am redoing the analyses to not include singletons. The results (on my personal computer under \verb+/Users/singhal/zebrafinch/analysis/admixture/+) didn't make too much sense, because the LTFs didn't break up that cleanly. I guess they really aren't that different, especially when you don't include the Z chromosome. Anyways, those analyses are running again, and I don't know about how to choose K with this program -- people do not seem to trust the CV approach. I am using the scripts \verb+make_admixture_files.py+ and \verb+make_admixture_files_LTF.py+.
+\item Simulations: This was the most frustrating thing. Molly didn't like the approach I used for the simulations to identify the right block penalty, so I ended up using the simulation script I wrote for identifying power to detect hotspots instead. This was a non-trivial amount of work, because I started with one approach (where just one hotspot was in the sequence), but it didn't work well because it created way too many files to analyze and it was impossible to identify the maximum number of configurations ... and there was no way that I was going to create a likelihood and pade file for each file. So, instead, I put a number of hotspots into each sequence file, and I am going to evaluate LDhelmet's ability to find hotspots on these metrics: false positive, false negative, rate, accuracy. I will identify the right bpen that way for finding hotspots. This might not be the right bpen for getting the recombination map, so I think that I will end up running LDhelmet at two different bpens. I think that I will end up getting the low bpen is the best, and then I will have too much noise. Oh well.
+\item Dadi: This is going to be the program that I will use to infer lineage divergence. Annoyingly, they have changed the scripts since I used it last, so I will have to rewrite all my PhD scripts. Installing it was tricky -- turns out I should put my Python libraries in the .local drive in my home drive on the cluster. Wrote a script to make the dadi files called \verb+make_dadi_files.py+
+\item Meeting with Molly: Sucked. Have to redo simulations and then get the analyses started again. Will be giving lab meeting. Alva is still going to work on these data for a while. Still not clear what I own versus what Ellen owns. The PAR stuff is legit, like I thought, and like they didn't think. The guy who was going to run LDhat disappeared.
+\item Other: Got Platypus and GATK implemented for Encelia, but need to make sure that GATK is working. Did a paper review for Current Zoology. Prepared for lab meeting on Monday. Read a lot of papers. Spent half of Wednesday sick.
+\end{itemize}
 
 \end{document}
