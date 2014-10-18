@@ -834,8 +834,96 @@ Anyways, despite all this uncertainty, I went ahead and generated multiple MSMC 
 \item Admixture: I created the input files for Admixture, both for all 4 lineages and just for LTF. I tried a number of subsampling regimes, but I ultimately landed upon a sampling scheme that made sense and gave about 300K SNPs. Along the way, I did it removing singletons, but Molly said no, so I am redoing the analyses to not include singletons. The results (on my personal computer under \verb+/Users/singhal/zebrafinch/analysis/admixture/+) didn't make too much sense, because the LTFs didn't break up that cleanly. I guess they really aren't that different, especially when you don't include the Z chromosome. Anyways, those analyses are running again, and I don't know about how to choose K with this program -- people do not seem to trust the CV approach. I am using the scripts \verb+make_admixture_files.py+ and \verb+make_admixture_files_LTF.py+.
 \item Simulations: This was the most frustrating thing. Molly didn't like the approach I used for the simulations to identify the right block penalty, so I ended up using the simulation script I wrote for identifying power to detect hotspots instead. This was a non-trivial amount of work, because I started with one approach (where just one hotspot was in the sequence), but it didn't work well because it created way too many files to analyze and it was impossible to identify the maximum number of configurations ... and there was no way that I was going to create a likelihood and pade file for each file. So, instead, I put a number of hotspots into each sequence file, and I am going to evaluate LDhelmet's ability to find hotspots on these metrics: false positive, false negative, rate, accuracy. I will identify the right bpen that way for finding hotspots. This might not be the right bpen for getting the recombination map, so I think that I will end up running LDhelmet at two different bpens. I think that I will end up getting the low bpen is the best, and then I will have too much noise. Oh well.
 \item Dadi: This is going to be the program that I will use to infer lineage divergence. Annoyingly, they have changed the scripts since I used it last, so I will have to rewrite all my PhD scripts. Installing it was tricky -- turns out I should put my Python libraries in the .local drive in my home drive on the cluster. Wrote a script to make the dadi files called \verb+make_dadi_files.py+
-\item Meeting with Molly: Sucked. Have to redo simulations and then get the analyses started again. Will be giving lab meeting. Alva is still going to work on these data for a while. Still not clear what I own versus what Ellen owns. The PAR stuff is legit, like I thought, and like they didn't think. The guy who was going to run LDhat disappeared.
+\item Meetings with Molly: Sucked. Have to redo simulations and then get the analyses started again. Will be giving lab meeting in November. Alva is still going to work on these data for a while. Still not clear what I own versus what Ellen owns. The PAR stuff is legit, like I thought, and like they didn't think. The guy who was going to run LDhat disappeared.
 \item Other: Got Platypus and GATK implemented for Encelia, but need to make sure that GATK is working. Did a paper review for Current Zoology. Prepared for lab meeting on Monday. Read a lot of papers. Spent half of Wednesday sick.
 \end{itemize}
 
+\labday{Week of 29 September - 3 October 2014}
+\begin{itemize}
+\item MSMC: Still running. Made no progress on it.
+\item TreeMix: It was running too slowly because the block size for identifying error was much too small given the size of my data set. Reran as: \verb+/mnt/lustre/home/sonal.singhal1/bin/treemix-1.12/fourpop -i /mnt/gluster/home/sonal.singhal1/ZF/analysis/treemix/treemix_auts_inclDBF1.txt.gz -k 50000+
+Got results:
+\begin{verbatim}
+npop:4 nsnp:78753025
+Estimating covariance matrix in 1575 blocks of size 50000
+Estimating f_4 in 1575 blocks of size 50000
+total_nsnp 78752747 nsnp 78753025
+# columns - f4 stat, SE in f4 , Z-score
+pop1,pop2;pop3,pop4 -0.0439553 0.00018652 -235.659
+pop1,pop3;pop2,pop4 -0.0439529 0.000186517 -235.65
+pop1,pop4;pop2,pop3 2.40322e-06 1.62195e-06 1.48168
+\end{verbatim}
+... where pop1: zf, pop2: ltfh, pop3: ltfa, pop4: dbf. The interpretation of this is the following -- the presumed unrooted tree is ((pop1, pop4),(pop2,pop3)) -- pretty straightforward because of course the longtailed finches are the most closely related. So, we want to see how much the realized data fits the treeness of that tree. Here, the z-stat is 1.48 (distance from 0 means worse fit), which is non-significant (p=0.07), so the data do a pretty good job of fitting the presumed tree structure, which suggests that the admixture treemix picked up is probably non-significant.
+\item SNAPP: I started the SNAPP analyses, but I had to do it on the MVZ cluster because it wasn't working on the Chicago cluster and I couldn't be bothered to see why.
+\verb+~/bin/BEAST/bin/beast -working -overwrite -threads 12 -prefix snapp_priors all_species.snapp_priors.xml+
+\verb+~/bin/BEAST/bin/beast -working -overwrite -threads 12 -prefix snapp all_species.snapp.xml+
+\item Admixture: I redid these results with singletons included, and wow, nothing changed.
+\item Simulations: The hotspot simulations showed the following:
+\begin{enumerate}
+\item false positives are rare unless you are looking for very small changes in rate (<10)
+\item very little power to detect things that are less than 2000 bp
+\item tends to underestimate both background rate and hotspot rate -- could this be because of singletons? (running simulations to know for sure)
+\item very narrow range in which hotspot detection works -- from rho / bp from 0.001 to 0.1. above and below that, looks like there is limited power, even when the value of the heat increases a lot.
+\item surprisingly, really high heat does not necessarily mean higher chance of detection.
+\item only using really high block penalties (100 or 500) leads to loss in finding stuff. but given that false positive rate is so low, might as well go with a low block penalty. 5 and 10 give marginally similar results, so will go with 10.
+\item in general, these simulations do not bode well for our ability to find real hotspots, though it turns out these values are pretty similar to other power analyses folks have done.
+\item getting general rate is best done with 100.
+\item Does suggest that we shouldn't trust results from chromosomes with high recombination rates, because LDhelmet isn't very sensitive to it.
+\end{enumerate}
+I also became convicned that maybe removing singletons is why the program was performing poorly, so I reran simulations with singletons.
+\verb+echo "/mnt/lustre/home/sonal.singhal1/bin/LDhelmet_v1.6/ldhelmet table_gen --num_threads 12 -c /mnt/gluster/home/sonal.singhal1/ZF/analysis/hotspot_simulations_wsingletons/simulation.conf -t 0.0135 -r 0.0 0.1 10.0 1.0 100.0 -o /mnt/gluster/home/sonal.singhal1/ZF/analysis/hotspot_simulations_wsingletons/simulation.lk" | qsub -l h_vmem=20g -cwd -V -j y -N 'lk'+ \\
+\verb+echo "/mnt/lustre/home/sonal.singhal1/bin/LDhelmet_v1.6/ldhelmet pade --num_threads 12 -c /mnt/gluster/home/sonal.singhal1/ZF/analysis/hotspot_simulations_wsingletons/simulation.conf -t 0.0135 -x 11 -o /mnt/gluster/home/sonal.singhal1/ZF/analysis/hotspot_simulations_wsingletons/simulation.pade" | qsub -l h_vmem=20g -cwd -V -j y -N 'pade'+ \\
+Nope, the results still sucked. \\
+
+I also made graphs, which are in \verb+hotspot_power.ipynb+ on my local disk. \\
+
+I am also scaling up the power analyses (only to evaluate with bpen=5) at Molly's bequest.
+
+\item Dadi: The script crashed due to memory, so I reran it and then combined files. Then, I noticed that a given triplet will often have two mutations, which seemed problematic. So, I wrote a short script \verb+prune_dadi.py+ that prunes the dadi files so that any mutations less than 3 bp apart are discarded.
+\item Meeting with Molly: Sucked even more than last time! Have to redo my power simulations. She will support me (modestly) for the NIH. Seemed semi-enthusiastic about the Columbia Science Fellows.
+\item LDhelmet: Came up with good priors for recombination rate based on the Ellegren data, and started rerunning the files with block penalty of 5 and 100 for all the data. Am using fewer iterations of the MCMC chain so that they will finish some day.
+\item Other: Read a few papers and finally came up with some hypotheses for my work. Not so clear that I will get funding, though. Lost Tuesday afternoon and most of Wednesday to finding new housing after current roommate turned out to be crazy.
+\end{itemize}
+
+\labday{Week of 6 October - 10 October 2014}
+\begin{enumerate}
+\item Simulations: listened to Molly but also decided that wouldn't be too informative, so added sims with 10x, 20x, 40x, 60x, 80x, 100x (2 each) too. Finished them and made plots.
+\item MSMC: finally finished, and when i made them, there were a few big problems:
+\begin{enumerate}
+\item population sizes were too big
+\item time mapped was only 500K years rather than the few million years of these lineage histories
+\item there was a lot of inconsistency across the same haplotypes sampled, whether controlled for the species or the chromosome
+\item the population size changes didn't look like PSMC results
+\end{enumerate}
+So, i looked into it. there are a few possible issues:
+\begin{enumerate}
+\item msmc doesn't work for a wide range of histories; some folks say this might true (Priya)
+\item our haplotypes are bad
+\item I had user error
+\end{enumerate}
+User error here could be -- looks like recombination rate is not estimated (as they suggested) but is automatically set. So, the recombination rate used was almost two orders of magnitude lower than it should have been. So, I used a recombination rate that is hopefully more or less accurate -- it was calculated by taking the $c$ estimated from Ellegren (1.3e-8) and multipled by $2 \cdot N_e$. It gave the result of $~0.0475$, which I used as the recombination rate. Hope that makes things work. Possible error on MSMC's part: they really underestimated the $\theta$, though that could just be because it was a smaller portion of the genome and a subportion of haplotypes was used to estimate theta. Update: new recombination rate decreases population size to match PSMC results better, but the time stamps are still really young. 
+\item Lab meeting: date for it still unclear. this clarified a need to add more basic population genomics to my work.
+\item Other: honestly, spent most of the week on non-zebrafinch work, such as figuring out Encelia and applying for other fellowships.
+\end{enumerate}
+
+
+\labday{Week of 13 October - 17 October 2014}
+\begin{enumerate}
+\item dadi: made \verb+dadi_make_fs.py+ to convert the dadi file into the 2DSFS. It took dadi too much memory to read it in, so I will not be able to use this. What a waste. I will have to turn it into t 2DSFS on my own, actually a 3D SFS on my own. As for possible population histories to fit, I will try migration, no migration, pop growth, and no pop growth, which gives a total of 4 possibilities to code and fit.
+\item Simulations: Molly finally okay with simulations, but she wonders if, instead of absolute rho, what matters more is the balance between theta and rho. (Regions of the genome with low rho also tend to have low theta.) So, I first estimated Watterson's theta across the entire genome in 50K chunks. Turns out the range of theta values is pretty low, varying from 0.0073 (10\%) to 0.02 (90\%). So, I simulated data at theta 0.0075, 0.014, and 0.02 for a range of rhos (all relative to theta). I doubt it will make much difference, but onward and upward. Also, had to figure out what theta was without all those singletons, so based on the simulated data, this is what I got:
+\begin{enumerate}
+\item theta 0.0075 -> 0.0057
+\item theta 0.014 -> 0.0109
+\item theta 0.02 -> 0.0148
+\end{enumerate}
+\begin{verbatim}
+echo "/mnt/lustre/home/sonal.singhal1/bin/LDhelmet_v1.6/ldhelmet table_gen --num_threads 12 -c /mnt/gluster/home/sonal.singhal1/ZF/analysis/hotspot_simulations/theta_rho/simulation_theta0.0075.conf -t 0.0057 -r 0.0 0.1 10.0 1.0 100.0 -o /mnt/gluster/home/sonal.singhal1/ZF/analysis/hotspot_simulations/theta_rho/simulation_theta0.0075.lk" | qsub -l h_vmem=20g -cwd -V -j y -N 'lk1'
+echo "/mnt/lustre/home/sonal.singhal1/bin/LDhelmet_v1.6/ldhelmet table_gen --num_threads 12 -c /mnt/gluster/home/sonal.singhal1/ZF/analysis/hotspot_simulations/theta_rho/simulation_theta0.014.conf -t 0.0109 -r 0.0 0.1 10.0 1.0 100.0 -o /mnt/gluster/home/sonal.singhal1/ZF/analysis/hotspot_simulations/theta_rho/simulation_theta0.014.lk" | qsub -l h_vmem=20g -cwd -V -j y -N 'lk2'
+echo "/mnt/lustre/home/sonal.singhal1/bin/LDhelmet_v1.6/ldhelmet table_gen --num_threads 12 -c /mnt/gluster/home/sonal.singhal1/ZF/analysis/hotspot_simulations/theta_rho/simulation_theta0.02.conf -t 0.0148 -r 0.0 0.1 10.0 1.0 100.0 -o /mnt/gluster/home/sonal.singhal1/ZF/analysis/hotspot_simulations/theta_rho/simulation_theta0.02.lk" | qsub -l h_vmem=20g -cwd -V -j y -N 'lk3'
+echo "/mnt/lustre/home/sonal.singhal1/bin/LDhelmet_v1.6/ldhelmet pade --num_threads 12 -c /mnt/gluster/home/sonal.singhal1/ZF/analysis/hotspot_simulations/theta_rho/simulation_theta0.0075.conf -t 0.0057 -x 11 -o /mnt/gluster/home/sonal.singhal1/ZF/analysis/hotspot_simulations/theta_rho/simulation_theta0.0075.pade" | qsub -l h_vmem=30g -cwd -V -j y -N 'pade1'
+echo "/mnt/lustre/home/sonal.singhal1/bin/LDhelmet_v1.6/ldhelmet pade --num_threads 12 -c /mnt/gluster/home/sonal.singhal1/ZF/analysis/hotspot_simulations/theta_rho/simulation_theta0.014.conf -t 0.0109 -x 11 -o /mnt/gluster/home/sonal.singhal1/ZF/analysis/hotspot_simulations/theta_rho/simulation_theta0.014.pade" | qsub -l h_vmem=30g -cwd -V -j y -N 'pade2'
+echo "/mnt/lustre/home/sonal.singhal1/bin/LDhelmet_v1.6/ldhelmet pade --num_threads 12 -c /mnt/gluster/home/sonal.singhal1/ZF/analysis/hotspot_simulations/theta_rho/simulation_theta0.02.conf -t 0.0148 -x 11 -o /mnt/gluster/home/sonal.singhal1/ZF/analysis/hotspot_simulations/theta_rho/simulation_theta0.02.pade" | qsub -l h_vmem=30g -cwd -V -j y -N 'pade3'
+\end{verbatim}
+\item Other: honestly, spent most of the week on non-zebrafinch work, such as figuring out Encelia and applying for other fellowships.
+\end{enumerate}
 \end{document}
