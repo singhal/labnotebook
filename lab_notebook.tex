@@ -912,9 +912,9 @@ User error here could be -- looks like recombination rate is not estimated (as t
 \item dadi: made \verb+dadi_make_fs.py+ to convert the dadi file into the 2DSFS. It took dadi too much memory to read it in, so I will not be able to use this. What a waste. I will have to turn it into t 2DSFS on my own, actually a 3D SFS on my own. As for possible population histories to fit, I will try migration, no migration, pop growth, and no pop growth, which gives a total of 4 possibilities to code and fit.
 \item Simulations: Molly finally okay with simulations, but she wonders if, instead of absolute rho, what matters more is the balance between theta and rho. (Regions of the genome with low rho also tend to have low theta.) So, I first estimated Watterson's theta across the entire genome in 50K chunks. Turns out the range of theta values is pretty low, varying from 0.0073 (10\%) to 0.02 (90\%). So, I simulated data at theta 0.0075, 0.014, and 0.02 for a range of rhos (all relative to theta). I doubt it will make much difference, but onward and upward. Also, had to figure out what theta was without all those singletons, so based on the simulated data, this is what I got:
 \begin{enumerate}
-\item theta 0.0075 -> 0.0057
-\item theta 0.014 -> 0.0109
-\item theta 0.02 -> 0.0148
+\item theta 0.0075 becomes 0.0057
+\item theta 0.014 becomes 0.0109
+\item theta 0.02 becomes 0.0148
 \end{enumerate}
 \begin{verbatim}
 echo "/mnt/lustre/home/sonal.singhal1/bin/LDhelmet_v1.6/ldhelmet table_gen --num_threads 12 -c /mnt/gluster/home/sonal.singhal1/ZF/analysis/hotspot_simulations/theta_rho/simulation_theta0.0075.conf -t 0.0057 -r 0.0 0.1 10.0 1.0 100.0 -o /mnt/gluster/home/sonal.singhal1/ZF/analysis/hotspot_simulations/theta_rho/simulation_theta0.0075.lk" | qsub -l h_vmem=20g -cwd -V -j y -N 'lk1'
@@ -926,4 +926,238 @@ echo "/mnt/lustre/home/sonal.singhal1/bin/LDhelmet_v1.6/ldhelmet pade --num_thre
 \end{verbatim}
 \item Other: honestly, spent most of the week on non-zebrafinch work, such as figuring out Encelia and applying for other fellowships.
 \end{enumerate}
+
+
+\labday{Week of 20 October - 24 October 2014}
+\begin{enumerate}
+\item LDhemlet: LTF - chr16 for bpen5 just kept failing - will need to revisit
+\item SNAPP: runs failed; none of the values updated along the chain?! Why / how could that be?
+\item Simulations: theta - rho interplay is really hard to disentangle, but it does appear that the ratio of the two values matters as well as rho and theta themselves. So, probably need to filter accordingly.
+\begin{enumerate}
+	\item clearly, anything above 0.5 background rho will have no worth
+	\item at really low background rates, having lower theta actually helps, so that's good because that is likely a biological reality
+\end{enumerate}
+\item Finding putative hotspots: Wrote \verb+find_hotspots_parse.py+.
+\begin{enumerate}
+\item bpen = 5
+\item heat = 10; rho ratio for spot to background to call a spot
+\item no masking for background rho or theta
+\item includes Zchromosome, which I have to redo, starting with SNP finding
+\item window size = 5K bp; drops any hotspots that are 5K within the last found hotspot
+\item overlap = 10K bp; considers any hotspots that are 10K within each other between the two species to be "matches"
+\item hotspot length = [1000, 2000]; ran the hotspot finder for two sizes for putative hotspots
+\item flank size = 20K bp on either side
+\item
+\begin{verbatim}
+species  spot_size  match_in_other_species
+LTF      1000       False                     2460
+                    True                       464
+         2000       False                     1165
+                    True                       190
+ZF       1000       False                     1276
+                    True                       464
+         2000       False                      727
+                    True                       190
+\end{verbatim}
+\end{enumerate}
+\item I wrote the calculate pi script, which is super slow, but at least it let me revisit the idea of pi and segregating sites, and how they connect to Tajima's D. Super sad that I had a better intuition of this when I was an undergrad!
+\item Also figured out what is going on with the reference genome for Taegut. The T. guttata genome has been pretty poorly named and organized across sequencing consortiums.
+\begin{enumerate}
+\item There have been two releases, one of which is called taeGut1 or WUGSC 3.2.4. This was released in 2008.
+\item There is another, which is called taeGut2 or taeGut324, or sometimes as taeGut3.2.4. This was released in Feb 2013.
+\item I have reason to believe that sequencing consortiums are sloppy with the namings, and aren't always using the right name. Check when the genome was released to know for sure.
+\item This project uses taeGut1.
+\item However, there is no clear difference between taeGut1 and taeGut2 in sequence length or sequence identity.
+\item Therefore, the annotation files for either / or should be good.
+\item taeGut1 is still available through the NCBI and UCSC.
+\end{enumerate}
+\item I also got super excited about pursuing the idea of divergence, polymorphism, and recombination in the long-tailed finch. If nothing else, it could be a great little story to include in my UNH talk, and would provide three really cute (and different) vignettes into the genomics of speciation.
+\item Worked only 3 days because it was Manan's birthday / mundun / Diwali. Also did spend a decent amount of time on the fellowships.
+\end{enumerate}
+
+\labday{Week of 27 October - 31 October 2014}
+\begin{enumerate}
+\item Lost Monday to moving and some of Friday because of fellowships.
+\item \textbf{Finding putative hotspots}:
+\begin{enumerate}
+\item 40k flanks better than 20k in terns of power, though I am still skeptical. These results are in the \verb+hotspot_power.ipynb+ in my local drive.
+\item Not matching hotspots are often still matched, but the other species hotspot is fainter, so not necessarily in the 10$\times$ range. Will clearly need to test reciprocally for hotspots, though Molly said there is a more clever way done by Crawford et al. that might be worth exploring.
+\item Some hotspots are clearly larger than the allowed hotspot -- need to concatenate these to get the true hotspot length.
+\item Did hotspot finding for 500, 1000, 2000 bp and 20K and 40K flanks. There has to be a better way to do this than trying to do it all iteratively.
+\end{enumerate}
+\item \textbf{Repeat Masking}
+\begin{enumerate}
+\item We should have repeat masked from the get go. Oh no. Oh well.
+\item http://www.repeatmasker.org/species/taeGut.html
+\item taeGut1 - Jul 2008 - RepeatMasker open-4.0.5 - Repeat Library 20140131
+\item Repeat masked the VCFs and reran biallelic etc accordingly.
+\item Repeat masked the post-text LDhelmet files. This is clearly a subpar solution, but eh.
+\item Created repeat masked genomes.
+\end{enumerate}
+\item \textbf{Pop-gen}
+\begin{enumerate}
+\item Calculated tajima's D. as expected, strong signal of population expansion
+\item Will need to recalculate using pi that accounts for repeat masking.
+\end{enumerate}
+\item \textbf{Phasing}
+\begin{enumerate}
+\item LTF does have a higher switch error rate than ZF; median error is 3.21\% in ZF compared to 4.496\% in LTF
+\item Results are in \verb+switch\_error\_rate.ipynb+.
+\end{enumerate}
+\end{enumerate}
+
+\labday{Week of 3 November - 7 November 2014}
+\begin{enumerate}
+\item \textbf{Long chromosomes}: Need to have some principled way to define long chromosomes for the analyses, so I calculated mean and median rhos for each chromosome. Most of the tricky chromosomes had median rhos in the range of 0.1 to 1, which is where I did no simulations. So, I needed to figure out how much power I had, if any, in that range. So, I dis some more simulations, adding them to the \verb+sim_10_20_40_60_80_100+ simulations on the cluster. I tested rhos from 0.1 to 1, and found the breaking point was somewhere between 0.6 and 0.8.
+\begin{table}[H]
+\begin{tabular}{lll}
+\hline
+chr      & mean  & median \\
+\hline
+chrZ     & 0.007 & 0.000  \\
+chr13    & 0.108 & 0.060  \\
+chr7     & 0.247 & 0.076  \\
+chr6     & 0.327 & 0.067  \\
+chr1A    & 0.151 & 0.015  \\
+chr4     & 0.107 & 0.013  \\
+chr3     & 0.094 & 0.006  \\
+chr2     & 0.076 & 0.012  \\
+chr1     & 0.123 & 0.009  \\
+chr8     & 0.292 & 0.098  \\
+chr5     & 0.163 & 0.025  \\
+chr11    & 0.263 & 0.050  \\
+chr12    & 0.491 & 0.348  \\
+chr9     & 0.389 & 0.200  \\
+chr10    & 0.425 & 0.215  \\
+chr15    & 0.743 & 0.503  \\
+chr14    & 0.491 & 0.419  \\
+chr4A    & 0.587 & 0.447  \\
+chr27    & 0.701 & 0.431  \\
+\hline
+chr17    & 0.968 & 0.892  \\
+chr16    & 3.541 & 3.541  \\
+chr19    & 0.929 & 0.941  \\
+chr18    & 0.835 & 0.770  \\
+chrLG2   & 0.764 & 0.772  \\
+chrLG5   & 9.232 & 9.232  \\
+chrLGE22 & 0.995 & 0.372  \\
+chr1B    & 1.472 & 1.447  \\
+chr26    & 1.058 & 0.933  \\
+chr24    & 1.343 & 1.491  \\
+chr25    & 1.891 & 2.002  \\
+chr22    & 1.352 & 1.573  \\
+chr23    & 1.135 & 1.357  \\
+chr20    & 0.833 & 0.793  \\
+chr21    & 1.196 & 1.233  \\
+chr28    & 1.224 & 1.017  \\
+\hline
+\end{tabular}
+\end{table}
+Simulations suggested that power drops off around 0.8. So, I will use chromsomes 1 - 15 (incl. 1A, 4A but not 1B) and chr27 and chrZ. \\
+\begin{verbatim}
+longchrs = [ 	'chr1', 'chr1A', 'chr2', 'chr3', 'chr4', 'chr4A', \
+				'chr5', 'chr6', 'chr7', 'chr8', 'chr9', 'chr10', \
+				'chr11', 'chr12', 'chr13', 'chr14', 'chr15', 'chr27', 'chrZ']
+\end{verbatim}
+Also recalculated average rho for these chromosomes only. For ZF, median rho is median rho: 0.02012 (in units per bp). For LTF: median rho: 0.01207 (in units per bp)
+\item \textbf{TSS}: Looked at the rho around TSS and plotted on home computer under \verb+/Users/singhal/zebrafinch/analysis/tss+. Looks somewhat similar to human and dog data, in that we see a peak of rho near the TSS, but it is not structured the same way.
+\item \textbf{95 HPD useful?}: Looking at if the 95\% HPD is informative. To do this, looked at map simulations and saw how often actual rho estimate falls within inferred 95 HPD. Only 325035 out 1914723 of the sampled points fall within the distribution, which is 17\%. (Results on \verb+/mnt/gluster/home/sonal.singhal1/ZF/analysis/map_simulations/stability_of_uncertainty.csv+).  If restricting it to the magic transition point ($rho < 0.8$) this sampling gets more accurate, but is still only 19\%. So, I think the 95\% HPD tells us very little, so I am not going to pursue it further. The deviation between actual and inferred rho has to be really low for the 95 HPD to count -- average deviation was 1.01, compared to 1.23 for those in which the 95 HPD didn't overlap. Clearly, it has to be fairly on point for it to be in the HPD. The HPD seems to be a bit narrowly defined.
+\item \textbf{Compare rhos in species}: calculated smoothed rho across multiple window sizes (10Kb, 100 KB, 1 MB, 5 MB); wrote \verb+compare_rho_correlations_species.py+; analyzed on \verb+compare_zf_ltf_rho.ipynb+ on my personal computer. Looks like correlations are pretty high, especially for long chromosomes ... but that there are a few chromosomes which are doing pretty different things.
+\item \textbf{Compare possible hotspot finders}: Tested three programs sequenceLDhot and InferRho and PHASE on their abilities to run on a set of randomly selected 20 hotspots. Script is called \verb+find_hotspots_multiple_validation.py+.. It generates both the sequence files and the shell scrip to run them. Initial results: InferRho is too slow. PHASE doesn't seem to be picking any of the hotspots up. SequenceLDhot is picking up some of the hotspots ... but also picking up other hotspots along the way. In the meantime, Jeff Wall at UCSF is running his modified version of LDhot for our data. He needs to generate the likelihood table and we'll go from there. Note that sequenceLDhot only requires 200M of RAM. I eventually killed InferRho because was taking too long to run. I also wrote the script \verb+find_hotspots_validate.py+ to run seqldhot for all the hotspots, as most conservatively defined with block length of 2kb and flank of 40Kb.
+\item \textbf{Recalculated thetas:} Need to recalculate thetas based on repeat-masked data.
+\begin{table}[h]
+\begin{tabular}{ccccccccc}
+\hline
+species & af & chr & SS & seq length & SS frac & $a_{n}$ & theta & $N_{E}$ \\
+\hline
+zf & af0 & all & 43937119 & 796084847 & 0.0552 & 4.202 & 0.0131 & 3.2e6 \\
+zf & af1 & all & 21412173 & 796084847 & 0.0269 & 4.202 & 0.0064 & NA \\
+zf & af0 & long only & 38894800 & 779429876 & 0.0499 & 4.202 & 0.0119 & 2.98e6 \\
+zf & af1 & long only & 19039396 & 779429876 & 0.0244 & 4.202 & 0.0058 & NA \\
+ltf & af0 & all & 25735433 & 832034824 & 0.0309 & 4.253 & 0.0073 & 1.8e6 \\
+ltf & af1 & all & 16018144 & 832034824 & 0.0193 & 4.253 & 0.0045 & NA \\
+ltf & af0 & long only & 22478765 & 708345822 & 0.0317 & 4.253 & 0.0075 & 1.9e6 \\
+ltf & af1 & long only & 13914413 & 708345822 & 0.0196 & 4.253 & 0.0046 & NA \\
+\hline
+\end{tabular}
+\end{table}
+\item \textbf{Z chromosome:} First, I filtered the Zchromsomes. Then I recoded them so that any heterozygous site in females was seen as wrong (as it is) and was replaced with an N. Any variable position that had 3 or more female hets was considered bad and ditched. Then, I created a VCF with males only, which was all that was phased. (Haploid chromosomes don't need to get phased...)
+\begin{enumerate}
+\item First ran extractPIRS. 
+\begin{verbatim}
+~/bin/extractPIRs.v1.r68.x86_64/extractPIRs --bam /mnt/gluster/home/sonal.singhal1/LTF/phasing/PIR_approach/results/chrZ_bamlist --vcf /mnt/gluster/home/sonal.singhal1/LTF/after_vqsr/by_chr/for_shapeit/gatk.ug.ltf.chrZ.filtered.coverage.repeatmasked.recodedsex.recoded_biallelicSNPS.males.vcf.gz --out /mnt/gluster/home/sonal.singhal1/LTF/phasing/PIR_approach/results/chrZ_PIRlist
+~/bin/extractPIRs.v1.r68.x86_64/extractPIRs --bam /mnt/gluster/home/sonal.singhal1/ZF/phasing/PIR_approach/results/chrZ_bamlist --vcf /mnt/gluster/home/sonal.singhal1/ZF/after_vqsr/by_chr/unrel_vcf/for_shapeit/gatk.ug.unrel_zf.chrZ.coverage.repeatmasked.filtered.recodedsex.recoded_biallelicSNPs.nomendel.males.vcf.gz --out /mnt/gluster/home/sonal.singhal1/ZF/phasing/PIR_approach/results/chrZ_PIRlist
+\end{verbatim}
+\item Then created a reference panel for phasing from the female haploid chromosomes, using \verb+chrZ_make_shapeit_hapref_females.py+. 
+\item Then I checked the reference against the sites to get phased. Note, a few sites were completely missing in males, so deleted those.
+\begin{verbatim}
+missing = [15901058]
+/mnt/lustre/home/sonal.singhal1/bin/shapeit_v2r790/shapeit -check --input-vcf /mnt/gluster/home/sonal.singhal1/ZF/after_vqsr/by_chr/unrel_vcf/for_shapeit/gatk.ug.unrel_zf.chrZ.coverage.repeatmasked.filtered.recodedsex.recoded_biallelicSNPs.nomendel.males.vcf.gz -R /mnt/gluster/home/sonal.singhal1/ZF/after_vqsr/by_chr/unrel_vcf/for_shapeit/femalehaps.hap.gz /mnt/gluster/home/sonal.singhal1/ZF/after_vqsr/by_chr/unrel_vcf/for_shapeit/femalehaps.legend.gz /mnt/gluster/home/sonal.singhal1/ZF/after_vqsr/by_chr/unrel_vcf/for_shapeit/femalehaps.sample --output-log /mnt/gluster/home/sonal.singhal1/ZF/after_vqsr/by_chr/unrel_vcf/for_shapeit/chrZ.alignmenterrors.txt
+missing = [12297573, 25324470, 31785435, 61311164]
+/mnt/lustre/home/sonal.singhal1/bin/shapeit_v2r790/shapeit -check --input-vcf /mnt/gluster/home/sonal.singhal1/LTF/after_vqsr/by_chr/for_shapeit/gatk.ug.ltf.chrZ.filtered.coverage.repeatmasked.recodedsex.recoded_biallelicSNPs.males.vcf.gz -R /mnt/gluster/home/sonal.singhal1/LTF/after_vqsr/by_chr/for_shapeit/femalehaps.hap.gz /mnt/gluster/home/sonal.singhal1/LTF/after_vqsr/by_chr/for_shapeit/femalehaps.legend.gz /mnt/gluster/home/sonal.singhal1/LTF/after_vqsr/by_chr/for_shapeit/femalehaps.sample --output-log /mnt/gluster/home/sonal.singhal1/LTF/after_vqsr/by_chr/for_shapeit/chrZ.alignmenterrors.txt
+\end{verbatim}
+\item Then I ran ShapeIt, which was lightning fast!
+\begin{verbatim}
+/mnt/lustre/home/sonal.singhal1/bin/shapeit_v2r790/shapeit -assemble --input-vcf /mnt/gluster/home/sonal.singhal1/ZF/after_vqsr/by_chr/unrel_vcf/for_shapeit/gatk.ug.unrel_zf.chrZ.coverage.repeatmasked.filtered.recodedsex.recoded_biallelicSNPs.nomendel.males.vcf.gz --input-pir /mnt/gluster/home/sonal.singhal1/ZF/phasing/PIR_approach/results/chrZ_PIRlist -O /mnt/gluster/home/sonal.singhal1/ZF/phasing/PIR_approach/results/chrZ_haplotypes -L /mnt/gluster/home/sonal.singhal1/ZF/phasing/PIR_approach/results/chrZ_haplotypes --window 0.5 --thread 8 --rho 0.0008 --output-graph /mnt/gluster/home/sonal.singhal1/ZF/phasing/PIR_approach/results/chrZ_haplotypes.graph -R /mnt/gluster/home/sonal.singhal1/ZF/after_vqsr/by_chr/unrel_vcf/for_shapeit/femalehaps.hap.gz /mnt/gluster/home/sonal.singhal1/ZF/after_vqsr/by_chr/unrel_vcf/for_shapeit/femalehaps.legend.gz /mnt/gluster/home/sonal.singhal1/ZF/after_vqsr/by_chr/unrel_vcf/for_shapeit/femalehaps.sample --no-mcmc
+/mnt/lustre/home/sonal.singhal1/bin/shapeit_v2r790/shapeit -assemble --input-vcf //mnt/gluster/home/sonal.singhal1/LTF/after_vqsr/by_chr/for_shapeit/gatk.ug.ltf.chrZ.filtered.coverage.repeatmasked.recodedsex.recoded_biallelicSNPs.males.vcf.gz --input-pir /mnt/gluster/home/sonal.singhal1/LTF/phasing/PIR_approach/results/chrZ_PIRlist -O /mnt/gluster/home/sonal.singhal1/LTF/phasing/PIR_approach/results/chrZ_haplotypes -L /mnt/gluster/home/sonal.singhal1/LTF/phasing/PIR_approach/results/chrZ_haplotypes --window 0.5 --thread 8 --rho 0.0008 --output-graph /mnt/gluster/home/sonal.singhal1/LTF/phasing/PIR_approach/results/chrZ_haplotypes.graph -R /mnt/gluster/home/sonal.singhal1/LTF/after_vqsr/by_chr/for_shapeit/femalehaps.hap.gz /mnt/gluster/home/sonal.singhal1/LTF/after_vqsr/by_chr/for_shapeit/femalehaps.legend.gz /mnt/gluster/home/sonal.singhal1/LTF/after_vqsr/by_chr/for_shapeit/femalehaps.sample --no-mcmc
+\end{verbatim}
+\item Then, I made chrZ haplotypes without singletons for LDhelmet using \verb+chrZ_make_seq_for_ldhelmet.py+
+\item then, I recalculated theta for chrZ, because it has a different chromosome number.
+\begin{verbatim}
+ZF Z chromosome theta
+num SS: 268945
+seq length: 61086180
+a_n: 3.891
+num-chrom: 28
+theta: 0.00113
+
+LTF Z theta:
+num SS: 412277
+seq length: 65344460
+a_n: 4.027
+num_chrom: 32
+theta: 0.00157
+\end{verbatim}
+\item Then, made ancestral alleles for chrZ again. No change to the script.
+\item Then ran all the LDhelmet nonsense with the new thetas. Interestingly, there were a lot more confs for these chromosomes. I wonder why? I hope that doesn't reflect poor phasing, though I don't see how it would.
+\begin{verbatim}
+~/bin/LDhelmet_v1.6/ldhelmet find_confs -w 50 --num_threads 8 -o /mnt/gluster/home/sonal.singhal1/ZF/analysis/LDhelmet/ZF_chr.conf /mnt/gluster/home/sonal.singhal1/ZF/phasing/PIR_approach/chrZ_haplotypes.fasta
+~/bin/LDhelmet_v1.6/ldhelmet find_confs -w 50 --num_threads 8 -o /mnt/gluster/home/sonal.singhal1/LTF/analysis/LDhelmet/LTF_chr.conf /mnt/gluster/home/sonal.singhal1/LTF/phasing/PIR_approach/chrZ_haplotypes.fasta
+/mnt/lustre/home/sonal.singhal1/bin/LDhelmet_v1.6/ldhelmet table_gen --num_threads 12 -c /mnt/gluster/home/sonal.singhal1/ZF/analysis/LDhelmet/ZF_chrZ.conf -t 0.00113 -r 0.0 0.1 10.0 1.0 100.0 -o /mnt/gluster/home/sonal.singhal1/ZF/analysis/LDhelmet/ZF_chrZ.lk 
+/mnt/lustre/home/sonal.singhal1/bin/LDhelmet_v1.6/ldhelmet table_gen --num_threads 12 -c /mnt/gluster/home/sonal.singhal1/LTF/analysis/LDhelmet/LTF_chrZ.conf -t 0.00157 -r 0.0 0.1 10.0 1.0 100.0 -o /mnt/gluster/home/sonal.singhal1/LTF/analysis/LDhelmet/LTF_chrZ.lk 
+/mnt/lustre/home/sonal.singhal1/bin/LDhelmet_v1.6/ldhelmet pade --num_threads 12 -c /mnt/gluster/home/sonal.singhal1/ZF/analysis/LDhelmet/ZF_chrZ.conf -t 0.00113 -x 11 -o /mnt/gluster/home/sonal.singhal1/ZF/analysis/LDhelmet/ZF_chrZ.pade
+/mnt/lustre/home/sonal.singhal1/bin/LDhelmet_v1.6/ldhelmet pade --num_threads 12 -c /mnt/gluster/home/sonal.singhal1/LTF/analysis/LDhelmet/LTF_chrZ.conf -t 0.00157 -x 11 -o /mnt/gluster/home/sonal.singhal1/LTF/analysis/LDhelmet/LTF_chrZ.pade
+/mnt/lustre/home/sonal.singhal1/bin/LDhelmet_v1.6/ldhelmet rjmcmc --num_threads 12 -o /mnt/gluster/home/sonal.singhal1/ZF/analysis/LDhelmet/chrZ_recombination_bpen5 -n 1000000 --burn_in 100000 -b 5 -s /mnt/gluster/home/sonal.singhal1/ZF/phasing/PIR_approach/chrZ_haplotypes.fasta -l /mnt/gluster/home/sonal.singhal1/ZF/analysis/LDhelmet/ZF_chrZ.lk  -p /mnt/gluster/home/sonal.singhal1/ZF/analysis/LDhelmet/ZF_chrZ.pade -a /mnt/gluster/home/sonal.singhal1/ZF/ancestral_allele/ancestral_allele.chrZ.ldhelmet.txt -m /mnt/gluster/home/sonal.singhal1/ZF/analysis/mutation_matrix.txt -w 50 --max_lk_end  0.03 --prior_rate 0.014
+/mnt/lustre/home/sonal.singhal1/bin/LDhelmet_v1.6/ldhelmet rjmcmc --num_threads 12 -o /mnt/gluster/home/sonal.singhal1/LTF/analysis/LDhelmet/chrZ_recombination_bpen5 -n 1000000 --burn_in 100000 -b 5 -s /mnt/gluster/home/sonal.singhal1/LTF/phasing/PIR_approach/chrZ_haplotypes.fasta -l /mnt/gluster/home/sonal.singhal1/LTF/analysis/LDhelmet/LTF_chrZ.lk  -p /mnt/gluster/home/sonal.singhal1/LTF/analysis/LDhelmet/LTF_chrZ.pade -a /mnt/gluster/home/sonal.singhal1/LTF/ancestral_allele/ancestral_allele.chrZ.ldhelmet.txt -m /mnt/gluster/home/sonal.singhal1/LTF/analysis/mutation_matrix.txt -w 50 --max_lk_end  0.03 --prior_rate 0.014
+/mnt/lustre/home/sonal.singhal1/bin/LDhelmet_v1.6/ldhelmet rjmcmc --num_threads 12 -o /mnt/gluster/home/sonal.singhal1/ZF/analysis/LDhelmet/chrZ_recombination_bpen100 -n 1000000 --burn_in 100000 -b 100 -s /mnt/gluster/home/sonal.singhal1/ZF/phasing/PIR_approach/chrZ_haplotypes.fasta -l /mnt/gluster/home/sonal.singhal1/ZF/analysis/LDhelmet/ZF_chrZ.lk  -p /mnt/gluster/home/sonal.singhal1/ZF/analysis/LDhelmet/ZF_chrZ.pade -a /mnt/gluster/home/sonal.singhal1/ZF/ancestral_allele/ancestral_allele.chrZ.ldhelmet.txt -m /mnt/gluster/home/sonal.singhal1/ZF/analysis/mutation_matrix.txt -w 50 --max_lk_end  0.03 --prior_rate 0.014
+/mnt/lustre/home/sonal.singhal1/bin/LDhelmet_v1.6/ldhelmet rjmcmc --num_threads 12 -o /mnt/gluster/home/sonal.singhal1/LTF/analysis/LDhelmet/chrZ_recombination_bpen100 -n 1000000 --burn_in 100000 -b 100 -s /mnt/gluster/home/sonal.singhal1/LTF/phasing/PIR_approach/chrZ_haplotypes.fasta -l /mnt/gluster/home/sonal.singhal1/LTF/analysis/LDhelmet/LTF_chrZ.lk  -p /mnt/gluster/home/sonal.singhal1/LTF/analysis/LDhelmet/LTF_chrZ.pade -a /mnt/gluster/home/sonal.singhal1/LTF/ancestral_allele/ancestral_allele.chrZ.ldhelmet.txt -m /mnt/gluster/home/sonal.singhal1/LTF/analysis/mutation_matrix.txt -w 50 --max_lk_end  0.03 --prior_rate 0.014
+\end{verbatim}
+\end{enumerate}
+\item \textbf{Phased haplotype files:} I'm an idiot -- the problem with using \verb+biallelic_SNPs*vcf+ for cross-species comparisons is that these files didn't contain fixed SNPs. These are the files I used for a number of things, so I need to redo those analyses (*BEAST, TreeMix, GeneTrees, STEAC/STAR). So, to do that, I first created phased VCF files using the haps data with the script \verb+phase_vcfs_using_haps.py+ and \verb+chrZ_phase_vcfs_using_haps.py+. Then, I created the haplotypes again using \verb+make_haplotypes.py+, with some modifications to account for the diffeent data source.
+\item \textbf{Random Notes:} Remember that in *ids.txt file, 1 = female and 2 = male. This is backwards from how most programs identify it.
+\end{enumerate}
+
+\labday{Week of 10 November - 14 November 2014}
+\begin{itemize}
+\item Had to make ZF chromosome 2 haplotypes again, failed for some reason.
+\item Ran post-to-text for chrZ LDhelmet for both species.
+\item Found hotspots on Z chromosome for ZF; no modifications to script.
+\item Estimated that mu for ZF is about 2.7e-9.
+\begin{enumerate}
+	\item theta of long chromosomes = 0.0119
+	\item median c of long chromosomes =  0.1284e-8 (because of 1e6 for Mb and 1e2 because a percentage) (calculated by using \verb+~/scripts/simple_median_c_rate.py+)
+	\item median rho of long chromosomes = 0.02497 (calculated using \verb+simple_summarize_rho_rates.py+)
+	\item $ \frac{\mu}{c} = \frac{\rho}{\theta} = \frac{\rho \cdot c}{\theta}  = \frac{0.02497 \cdot 0.1284 \cdot 10_{-8}}{0.0119} = 2.7 \cdot 10^{-9}$
+\end{enumerate}
+\item Smoothed windows for Z chromosome
+\item Fixed seqLDhot script to use VCFs, so it is more flexible. Than ran seqLDhot for ZF for all hotspots. Will start LTF and DBF soon.
+\item Redid phase uncertainty for Z chromosome.
+\item Wrote first draft of methods.
+\item Redid STAR / STEAC.
+\item Replotted gene trees.
+\item Initial results suggest 539 out of 704 hotspots are confirmed!; results from 'round1' and plots are in \verb+analysis/hotspot_validation+
+\item Redid treemix to include fixed sites.
+\item Redid STARBEAST for 3 sets of 50 loci each, using relaxed lognormal clock with mutation rate 0.0027 per site in million years. Used fixed substitution and clock model across loci, because even though not true, keeps things running.
+\end{itemize}
+
 \end{document}
