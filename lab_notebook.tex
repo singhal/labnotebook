@@ -1070,13 +1070,13 @@ Also recalculated average rho for these chromosomes only. For ZF, median rho is 
 \hline
 species & af & chr & SS & seq length & SS frac & $a_{n}$ & theta & $N_{E}$ \\
 \hline
-zf & af0 & all & 43937119 & 796084847 & 0.0552 & 4.202 & 0.0131 & 3.2e6 \\
+zf & af0 & all & 43937119 & 796084847 & 0.0552 & 4.202 & 0.0131 & NA \\
 zf & af1 & all & 21412173 & 796084847 & 0.0269 & 4.202 & 0.0064 & NA \\
-zf & af0 & long only & 38894800 & 779429876 & 0.0499 & 4.202 & 0.0119 & 2.98e6 \\
+zf & af0 & long only & 38894800 & 779429876 & 0.0499 & 4.202 & 0.0119 & NA \\
 zf & af1 & long only & 19039396 & 779429876 & 0.0244 & 4.202 & 0.0058 & NA \\
-ltf & af0 & all & 25735433 & 832034824 & 0.0309 & 4.253 & 0.0073 & 1.8e6 \\
+ltf & af0 & all & 25735433 & 832034824 & 0.0309 & 4.253 & 0.0073 & NA \\
 ltf & af1 & all & 16018144 & 832034824 & 0.0193 & 4.253 & 0.0045 & NA \\
-ltf & af0 & long only & 22478765 & 708345822 & 0.0317 & 4.253 & 0.0075 & 1.9e6 \\
+ltf & af0 & long only & 22478765 & 708345822 & 0.0317 & 4.253 & 0.0075 & NA \\
 ltf & af1 & long only & 13914413 & 708345822 & 0.0196 & 4.253 & 0.0046 & NA \\
 \hline
 \end{tabular}
@@ -1147,7 +1147,7 @@ theta: 0.00157
 	\item theta of long chromosomes = 0.0119
 	\item median c of long chromosomes =  0.1284e-8 (because of 1e6 for Mb and 1e2 because a percentage) (calculated by using \verb+~/scripts/simple_median_c_rate.py+)
 	\item median rho of long chromosomes = 0.02497 (calculated using \verb+simple_summarize_rho_rates.py+)
-	\item $ \frac{\mu}{c} = \frac{\rho}{\theta} = \frac{\rho \cdot c}{\theta}  = \frac{0.02497 \cdot 0.1284 \cdot 10_{-8}}{0.0119} = 2.7 \cdot 10^{-9}$
+	\item $ \frac{\mu}{c} = \frac{\theta}{\rho} = \frac{\theta \cdot c}{\rho}  = \frac{0.0119 \cdot 0.1284 \cdot 10e-8}{0.02497} = 6.12 \cdot 10^{-10}$
 \end{enumerate}
 \item Smoothed windows for Z chromosome
 \item Fixed seqLDhot script to use VCFs, so it is more flexible. Than ran seqLDhot for ZF for all hotspots. Will start LTF and DBF soon.
@@ -1160,4 +1160,157 @@ theta: 0.00157
 \item Redid STARBEAST for 3 sets of 50 loci each, using relaxed lognormal clock with mutation rate 0.0027 per site in million years. Used fixed substitution and clock model across loci, because even though not true, keeps things running.
 \end{itemize}
 
+\labday{Week of 17 November - 21 November 2014}
+\begin{enumerate}
+\item Fixed TSS so that the orientation of genes on the reverse strand are also 5' to 3'.
+\item Finished rerunning Treemix.
+\begin{verbatim}
+npop:4 nsnp:76608539
+Estimating covariance matrix in 1532 blocks of size 50000
+Estimating f_4 in 1532 blocks of size 50000
+total_nsnp 76608539 nsnp 76608539
+pop1,pop2;pop3,pop4 -0.0488578 0.00064788 -75.4119
+pop1,pop3;pop2,pop4 -0.0488563 0.000647846 -75.4135
+pop1,pop4;pop2,pop3 1.56294e-06 1.58227e-06 0.987782
+\end{verbatim}
+Here, the z-stat is 0.98 (distance from 0 means worse fit), which is non-significant (p=0.32), so the data do a pretty good job of fitting the presumed tree structure.
+\item Updated Methods, shared with Alva and Ellen
+\item BAH. Messed up mu calculations. corrected. The new estimate is $6.1 \cdot 10^{-10}$, which is really low. It gives a $N_e$ estimate that makes sense, but ...
+\item Started redoing the recombination graphs. Too many of these chromosomes don't make it to 50 cM, which is what you'd expect if you get 2 crossovers per chromosome in every individual, which is what they argue you need for proper segregation during meiosis. It is quite possible that I have misestimated Ne, but, I also think that the mutation rate between ZF and LTF would have to be quite different for this to work for both. Maybe I misestimated $\theta$ for LTF? How could that be?
+\item Started making files for hotspot power simulations. These needed to be scaled up, so am doing enough simulations per parameter set to get 100 hotspots.
+\item Created PHASE files for all hotspots -- will check if PHASE does better than seqldhot. Am allowing PHASE to rephase and also giving PHASE known phases. Note: I am running MR2, which is different from MR1, because you have to tell it where the hotspot is. This worries me because I think that is an imprecise thing, but so it goes. Having PHASE identify the phasing is going SUPER slowly, so I think that I won't do that for LTF, nor will I do it for more than a few of these hotspots. Will do it just to appease Molly. Will need to run each hotspot 3 times though, because that's what the 
+\item Substitution * clock rate gives total evoutionary rate, so don't try to estimate both, because things become non-identifiable. This is why my new BEAST runs failed. To fix it, I need to not estimate subsitution rates, and just allow clock rates to vary. I should probably not have one clock rate for all of the data like I did before. And I should probably allow multiple substitution models across the sites, but then there will be way too many parameters...
+\end{enumerate}
+
+\labday{Week of 24 November - 26 November 2014}
+\begin{enumerate}
+\item SequenceLDhot reciprocal; these finally finished
+\item Reran PHASE to be full scale for both species
+\item Full simulations for power -- started them running, 500 simulations in total
+\item Rewrote counting of multiallelic sites to be simpler, \verb+count_multiallelic_sites.py+ and reran.
+\begin{verbatim}
+LTF:
+multiallelic SNPs: 465636
+all SNPs: 26173532
+percent: 1.8%
+ZF
+multiallelic SNPs: 1643215
+all SNPs: 45566004
+percent: 3.6%
+\end{verbatim}
+\item Data on wrong female genotypes.
+\begin{verbatim}
+LTF
+all_sites: 1907667
+filtered_sites: 30263
+all_female_geno: 15261336
+wrong_female_geno: 233357
+\end{verbatim} 
+\begin{verbatim}
+ZF
+all_sites: 826189
+filtered_sites: 15664
+all_female_geno: 8261890
+wrong_female_geno: 154541
+\end{verbatim} 
+\item Realized that I never calculated the median / mean rates for longtailed, so did that. The values are lower, as expected, but looks like hotspot finding should be fine in all comparable chromosomes but for chrZ (\verb+summarize_rho_chromosomes.py+).
+\item \verb+find_hotspots_seqldhot_parse.py+ -- Gets the data on seqldhot matches.
+\end{enumerate}
+
+\labday{Week of 1 December - 12 December 2014}
+\begin{enumerate}
+\item First, I wrote a script to parse PHASE (\verb+find_hotspots_phase_parse.py+) which found that PHASE validated many fewer hotspots than SeqLDhot. This is likely because (1) PHASE is less powered and (2) PHASE requires one to identify where the hotspot is.
+\item Also, to ensure that errors in phasing aren't influencing hotspot detection, I ran PHASE in the mode where it re-estimates haplotypes as well. I then compared these rephased results to the ShapeIt phased results (asphased). The two sets of results are pretty much the same. The script used was \verb+find_hotspots_phase_rephased.py+.
+\item I uploaded the phased VCF files and the haplotype data to Jeff on my Columbia Google Drive. I will keep the data there because it seems like a good just-in-case backup.
+\item I plotted hotspot validation data in my local notebook \verb+hotspot_validation.ipynb+.
+\item Met with Molly and we discussed why the hotspot finding has been so erratic. We came up with a few options. 
+\begin{enumerate}
+	\item SNP calls are bad
+	\item Phasing is bad
+	\item LDhelmet is inaccurate
+	\item seqldhot / PHASE are too sensitive
+ \end{enumerate}
+ How to check for these options?
+ \begin{enumerate}
+ 	\item use LDhat because doesn't require phasing
+ 	\item do simulations to see how switch error rate influences FDR
+ 	\item see if hotspots are in areas with low SNP quality, high switch error rate, lots of Mendelian error
+ 	\item do sensitivity test of PHASE
+ 	\item do sensitivity test of seqLDhot
+ 	\item compare family phasing to each other when run as three trios
+ 	\item compare family phasing to population phasing
+ 	\item rephase population using family phasing
+ 	\item look at hotspots under phase uncertainty
+ \end{enumerate}
+ \item I rephase ZF population using family phasing.
+ \begin{enumerate}
+ 	\item make HAPI files: no multiallelics, 
+ 	\item rerun PIR1
+ 	\item run HAPI: had to be careful with output because will need to change chrom numbers
+ 	\item get HAPI files to be in reference format -- mind missing data
+	\item rerun PIR2
+ 	\verb+/mnt/lustre/home/sonal.singhal1/bin/shapeit_v2r790/shapeit -assemble --input-vcf /mnt/gluster/home/sonal.singhal1/ZF/after_vqsr/by_chr/unrel_vcf/for_shapeit/gatk.ug.unrel_zf.chrLGE22.coverage.repeatmasked.filtered.recoded_biallelicSNPs.nomendel.trimmed.vcf.gz --input-pir /mnt/gluster/home/sonal.singhal1/ZF/phasing/PIR_approach/chrLGE22_PIRlist -O /mnt/gluster/home/sonal.singhal1/ZF/phasing/PIR_approach/chrLGE22_haplotypes -L /mnt/gluster/home/sonal.singhal1/ZF/phasing/PIR_approach/chrLGE22_haplotypes --window 0.5 --thread 8 --rho 0.0008 --output-graph /mnt/gluster/home/sonal.singhal1/ZF/phasing/PIR_approach/chrLGE22_haplotypes.graph -R /mnt/gluster/home/sonal.singhal1/ZF/after_vqsr/by_chr/unrel_vcf/for_shapeit/chrLGE22.hap.gz /mnt/gluster/home/sonal.singhal1/ZF/after_vqsr/by_chr/unrel_vcf/for_shapeit/chrLGE22.legend.gz /mnt/gluster/home/sonal.singhal1/ZF/after_vqsr/by_chr/unrel_vcf/for_shapeit/chrLGE22.sample --no-mcmc+
+ 	\item Rephase population using family phasing (\verb+old_results+ and \verb+old_hap+ vs. \verb+results/+)
+ 	\item Some ShapeIt phasing failed, in which case I just used the old phasing without the bases in repetitive areas.
+ \end{enumerate}
+\item Finished the full simulations for power. There are fake hotspots! boo. i think some of this may be that my definition of false positive is too sensitive...
+\item Helped find bug for Amy in HAPI.
+\item I did simulations to see how switch error rate influences FDR; wrote script: \verb+simulations_FDR.py+.
+\item With all previous analyses, had been looking only at the most trusted set of hotspots. Let's blow it up, a bit. Basically, want to confirm that all hotspots found in the most lax settings also find all the more conservatively defined hotspots. Looks like most of the matches in the most conservative set are recapitulated in one of the other sets. Only 38 in the most conservative set are unique to this set. Looks like there are 3519 unique hotspots in ZF and 6291 unique hotspots in LTF. So, the general pool of hotspots is much greater than the most conservative set that we tested. Important to think about with respect to identifying how "matching" the two genomes are. Maybe this is the importance of identifying and using coldspots? (\verb+hotspot_issues.ipynb+)
+\item Fixed all recombination maps to be in cM assuming same genetic length
+\item Ran LDhat on genotype data to see if it works as well as on phased data. Trying to see if phasing is in fact the issue. \verb+~/bin/LDhat_v2.2/complete -n 38 -rhomax 100 -n_pts 101 -theta 0.0058+ and generated LDhat files. LDhat seems super underpowered, and also, it recovered hardly any hotspots.
+\item Worked on lab meeting presentation.
+\item Made the pi to recombination rate plot.
+\item Finished recalculating pi, theta, and tajima's D and made pop gen graphs.
+\end{enumerate}
+
+\labday{Week of 15 December - 19 December 2014}
+\begin{enumerate}
+\item Gave lab meeting. Sucked. Whatever. 
+\item Fixed many figures based on lab feedback.
+\item Identified cold spots for Ellen. Turns out these need to be matched for base composition, which I haven't done yet. Script is \verb+identify_coldspots.py+.
+\begin{verbatim}
+ANCESTRAL GENOME
+/mnt/gluster/home/sonal.singhal1/reference/ancestral_genome.fa
+VCF FILES
+LTF: /mnt/gluster/home/sonal.singhal1/LTF/after_vqsr/by_chr/*phased*gz
+ZF: /mnt/gluster/home/sonal.singhal1/ZF/after_vqsr/by_chr/unrel_vcf/*phased*gz
+HOTSPOT DATA
+LTF: /mnt/gluster/home/sonal.singhal1/for_ellen/seqldhot_validated_hotspots.LTF.csv
+ZF: /mnt/gluster/home/sonal.singhal1/for_ellen/seqldhot_validated_hotspots.ZF.csv
+COLDSPOT DATA
+LTF: /mnt/gluster/home/sonal.singhal1/for_ellen/ldhelmet_unvalidated_coldspots.LTF.csv
+ZF: /mnt/gluster/home/sonal.singhal1/for_ellen/ldhelmet_unvalidated_coldspots.ZF.csv
+\end{verbatim}
+\item Made figure 1E from auton 2012 (corr in 5Mb chunks). Is in \verb+recombination_maps.ipynb+. Did this as correlation rather than difference as in Auton 2012 because it made more sense.
+\item Will attempt to account for phase uncertainty for hotspots. To do so, wrote script \verb+find_hotspots_phasing_uncertainty.py+. This script generates seqldhot input files based on randomly sampled haplotypes from the haplotype graph. I ran these results and put them in \verb+/mnt/gluster/home/sonal.singhal1/ZF/analysis/hotspots/hotspot_checks/phasing_uncertainty+
+\item I then rephased the unrelated population using the parental haplotypes from the family as reference. Reran LDhelmet, had to restart two of them, and it looked like there were issues with one of the clusters.
+\item In order to get an estimate of switch error rate, I am going to compare phasing of the family as done with hapi versus as done with the PIR approach. To do so, I had to do the standard litany of creating biallelic VCFs, running PIR1, running PIR2, and then getting rid of completely missing sites.
+\end{enumerate}
+
+\labday{Week of 5 January - 9 January 2014}	
+\begin{enumerate}
+\item Had to redo ancestral genomes because G. magnirostris and G. fortis genomes weren't quite right. They were too short, which happens because samtools faidx will not call a base N unless it at least has some coverage in it. So, I\verb+geospiza_genomes.py+ to help take care of this issue. In the meantime, I had to regenerate the G. magnirostris vcf, using this command. \verb+~/bin/samtools-0.1.19/samtools mpileup -I -uf /mnt/gluster/home/sonal.singhal1/reference/taeGut1_60.bamorder.fasta /mnt/gluster/home/sonal.singhal1/Darwin/g_magnirostris/Geospiza_magnirostris.bam | ~/bin/samtools-0.1.19/bcftools/bcftools view -t 0.1 -I -c - > /mnt/gluster/home/sonal.singhal1/Darwin/g_magnirostris/Geospiza_magnirostris.vcf+
+\item Compared hotspots found with ZF phased using family reference and without family phasing.
+\begin{enumerate}
+	\item putative hotspots for ZF, without fam: 874 -- 316 match in both species
+	\item putative hotspots for ZF, with fam: 603 -- 317 match in both species
+	\item gosh darn. Phasing matters so much. I really worry about all these results.
+	\item will need to look at these results and decide which phasing set to go with.
+\end{enumerate}
+\item Using the results from hapi, I compared the haplotypes the children inherited to that they got from their parents. Any differences should be either from CO, NCO, or errors.
+\begin{enumerate}
+	\item way too many breaks (0.0027 out of a heterozygous site)
+	\item if you get rid of the small breaks (some of which could be gene conversions) it goes down to 0.00023
+	\item many of these must be errors
+	\item \verb+recombination_breaks_hapi.py+ is the script to do it.
+	\item \verb+/mnt/gluster/home/sonal.singhal1/ZF/phasing/family_approach/hapi/all_chr.breaks.csv+
+\end{enumerate}
+\item Found hotspots for full range for \verb+/mnt/gluster/home/sonal.singhal1/ZF/analysis/LDhelmet/with_fam/putative_hotspots+
+\item Switch error rate: compare family phased with HAPI to family phased using ShapeIt. Note that you lose some SNPs using the family method. the median switch error rate (plotted in \verb+switch_error.ipynb+) howevers around 1\% to 10\% for each chromosome. It is really high on chromosome 1 at around 5e7 bp (or halfway through). This doesn't surprise me because chromosome 1 was super hard to phase. I suspect this is an issue with file corruption. Also, looks like switch error rate is higher where recombination is higher. This makes sense, as hapi attempts to minimize recombination at all times, which, if recombination is actually high, would lead to false negatives.
+\item Remade graph for switch error rate; in \verb+hotspot_issues.ipynb+. Wwitch error rate doesn't look to be associated with hotspot occurrence. Interesting.
+\item Molly wants to get rid of any sites that are in areas of short switches, with the assumption being that we are getting way more than you'd expect just due to NCOs, so they must be errors. I plotted the number of switches based on the length of switch that was ditched, and it looks like if you remove just the shortest of switches (1) I more than half the number of switches. By removing longer switches (up to 10), I get 90\% removed. You have to remove really long switches (50K) in order to get 20 or so switches .... which is still too much. So, clearly the data have issues, but you do what you can. I will mask all the sequence within the bad switch. Because I have the repeatmasked sequence and this sequence to remove, I don't want to do it posthoc anymore. That's janky. Molly agrees. So I am sadly starting anew. And I made the bold decision to start from the real beginning because I am concerned about the quality of the pipeline because we have changed our minds so often.
+\item Need to decide how to handle LTF -- should this sequence be masked for them too?
+\item Step 1 of new pipeline: regenerating coverage-masked and repeat-masked VCFs from the raw VCFs for the family and unrelated ZF.
+\end{enumerate}
 \end{document}
