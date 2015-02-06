@@ -1288,7 +1288,7 @@ ZF: /mnt/gluster/home/sonal.singhal1/for_ellen/ldhelmet_unvalidated_coldspots.ZF
 \item In order to get an estimate of switch error rate, I am going to compare phasing of the family as done with hapi versus as done with the PIR approach. To do so, I had to do the standard litany of creating biallelic VCFs, running PIR1, running PIR2, and then getting rid of completely missing sites.
 \end{enumerate}
 
-\labday{Week of 5 January - 9 January 2014}	
+\labday{Week of 5 January - 9 January 2015}	
 \begin{enumerate}
 \item Had to redo ancestral genomes because G. magnirostris and G. fortis genomes weren't quite right. They were too short, which happens because samtools faidx will not call a base N unless it at least has some coverage in it. So, I\verb+geospiza_genomes.py+ to help take care of this issue. In the meantime, I had to regenerate the G. magnirostris vcf, using this command. \verb+~/bin/samtools-0.1.19/samtools mpileup -I -uf /mnt/gluster/home/sonal.singhal1/reference/taeGut1_60.bamorder.fasta /mnt/gluster/home/sonal.singhal1/Darwin/g_magnirostris/Geospiza_magnirostris.bam | ~/bin/samtools-0.1.19/bcftools/bcftools view -t 0.1 -I -c - > /mnt/gluster/home/sonal.singhal1/Darwin/g_magnirostris/Geospiza_magnirostris.vcf+
 \item Compared hotspots found with ZF phased using family reference and without family phasing.
@@ -1313,4 +1313,117 @@ ZF: /mnt/gluster/home/sonal.singhal1/for_ellen/ldhelmet_unvalidated_coldspots.ZF
 \item Need to decide how to handle LTF -- should this sequence be masked for them too?
 \item Step 1 of new pipeline: regenerating coverage-masked and repeat-masked VCFs from the raw VCFs for the family and unrelated ZF.
 \end{enumerate}
+
+\labday{Week of 12 January - 16 January 2015}	
+So, this week was frustrating. I did everything up to running PIR. But then, when I ran ShapeIt in Assemble mode, all the files failed. I think it is because combining the unrelated and family samples lead to a lot of poor quality SNPs being called real SNPs. I can see this in the huge increase of heterozygous sites called on the Z chromosome.
+
+To hopefully get things to work again, I am going to start the pipeline again only using the SNPs called in the unrelated zebrafinches. Unfortunately, the cluster was down on Friday and I was at the NYAPG conference Thursday, so that lead to a few lost days.
+
+\labday{Week of 20 January - 23 January 2015}
+\begin{enumerate}
+\item Taking out sites in the short switch stretches ultimately removed sites as such:
+\begin{enumerate}
+		\item 3.3\% of sites overall (though doesn't account for rm, coverage) and is probably a greater proportion of SNPs
+		\item 5.3\% of each chromosome, on average
+\end{enumerate}
+However, removing the switched regions reduced the number of small breaks by 99.4\%. Many chromosomes, especially the smaller chomosomes, now have no small breaks. (Calculated using \verb+recombination_breaks_hapi_parse.py+)
+\item Redoing the sex chromosomes gave the following error rates.
+\begin{verbatim}
+ZF
+all_sites: 830723
+filtered_sites: 16513 (2\% of sites)
+all_female_geno: 9137953
+wrong_female_geno: 165422 (1.8\% of geno)
+LTF
+all_sites: 1907667
+filtered_sites: 30263 (1.6\% of sites)
+all_female_geno: 15261336
+wrong_female_geno: 233357 (1.5\% of sites)
+\end{verbatim}
+\item Redid both steps of the PIR for chrZ.
+\begin{verbatim}
+# PIR1
+~/bin/extractPIRs.v1.r68.x86_64/extractPIRs --bam /mnt/gluster/home/sonal.singhal1/LTF/phasing/PIR_approach/chrZ_bamlist --vcf /mnt/gluster/home/sonal.singhal1/LTF/after_vqsr/by_chr/for_shapeit/gatk.ug.ltf.chrZ.allfilters.recodedsex.recoded_biallelicSNPs.males.vcf.gz --out /mnt/gluster/home/sonal.singhal1/LTF/phasing/PIR_approach/chrZ_PIRlist
+~/bin/extractPIRs.v1.r68.x86_64/extractPIRs --bam /mnt/gluster/home/sonal.singhal1/ZF/phasing/PIR_approach/finch19/chrZ_bamlist --vcf /mnt/gluster/home/sonal.singhal1/ZF/after_vqsr/by_chr/all_vcf/for_shapeit/gatk.ug.finch19.chrZ.allfilters.recodedsex.recoded_biallelicSNPs.males.vcf.gz --out /mnt/gluster/home/sonal.singhal1/ZF/phasing/PIR_approach/finch19/chrZ_PIRlist
+# assemble files 
+/mnt/lustre/home/sonal.singhal1/bin/shapeit_v2r790/shapeit -assemble --input-vcf /mnt/gluster/home/sonal.singhal1/ZF/after_vqsr/by_chr/all_vcf/for_shapeit/gatk.ug.finch19.chrZ.allfilters.recodedsex.recoded_biallelicSNPs.males.vcf.gz --input-pir /mnt/gluster/home/sonal.singhal1/ZF/phasing/PIR_approach/finch19/chrZ_PIRlist -O /mnt/gluster/home/sonal.singhal1/ZF/phasing/PIR_approach/finch19/chrZ_haplotypes -L /mnt/gluster/home/sonal.singhal1/ZF/phasing/PIR_approach/finch19/chrZ_haplotypes --window 0.5 --thread 8 --rho 0.0008 -R /mnt/gluster/home/sonal.singhal1/ZF/after_vqsr/by_chr/all_vcf/for_shapeit/chrZ.hap.gz /mnt/gluster/home/sonal.singhal1/ZF/after_vqsr/by_chr/all_vcf/for_shapeit/chrZ.legend.gz /mnt/gluster/home/sonal.singhal1/ZF/after_vqsr/by_chr/all_vcf/for_shapeit/chrZ.sample
+/mnt/lustre/home/sonal.singhal1/bin/shapeit_v2r790/shapeit -assemble --input-vcf /mnt/gluster/home/sonal.singhal1/LTF/after_vqsr/by_chr/for_shapeit/gatk.ug.ltf.chrZ.allfilters.recodedsex.recoded_biallelicSNPs.males.vcf.gz --input-pir /mnt/gluster/home/sonal.singhal1/LTF/phasing/PIR_approach/chrZ_PIRlist -O /mnt/gluster/home/sonal.singhal1/LTF/phasing/PIR_approach/chrZ_haplotypes -L /mnt/gluster/home/sonal.singhal1/LTF/phasing/PIR_approach/chrZ_haplotypes --window 0.5 --thread 8 --rho 0.0008 -R /mnt/gluster/home/sonal.singhal1/LTF/after_vqsr/by_chr/for_shapeit/chrZ.hap.gz /mnt/gluster/home/sonal.singhal1/LTF/after_vqsr/by_chr/for_shapeit/chrZ.legend.gz /mnt/gluster/home/sonal.singhal1/LTF/after_vqsr/by_chr/for_shapeit/chrZ.sample
+\end{verbatim}
+\item Recalculated thetas for use in LDhelmet.
+\begin{verbatim}
+Thetas without singletons
+ZF
+autosomes unmasked sites: 720884816
+autosomes non-singleton sites: 20452332
+autosomes nchr: 38
+theta: 0.00675
+
+chrZ unmasked sites: 54450385
+chrZ non-singleton sites: 663470
+chrZ nchr: 28
+theta: 0.00313
+
+LTF
+autosomes unmasked sites: 773166097
+autosomes non-singleton sites: 15526465
+autosomes nchr: 40
+theta: 0.00472
+
+chrZ unmasked sites: 58868727
+chrZ non-singleton sites: 643378
+chrZ nchr: 32
+theta: 0.00271
+\end{verbatim}
+\end{enumerate}
+
+\labday{Week of 26 January - 30 January 2015}
+\begin{enumerate}
+\item Regenerated the table gen and pade files.
+\begin{verbatim}	
+~/bin/LDhelmet_v1.6/ldhelmet table_gen --num_threads 12 -c /mnt/gluster/home/sonal.singhal1/LTF/analysis/LDhelmet/LTF_auto.conf -o /mnt/gluster/home/sonal.singhal1/LTF/analysis/LDhelmet/LTF_auto.gen -t 0.00472 -r 0.0 0.1 10.0 1.0 100.0 
+~/bin/LDhelmet_v1.6/ldhelmet table_gen --num_threads 12 -c /mnt/gluster/home/sonal.singhal1/ZF/analysis/LDhelmet/ZF_auto.conf -o /mnt/gluster/home/sonal.singhal1/ZF/analysis/LDhelmet/ZF_auto.gen -t 0.00675 -r 0.0 0.1 10.0 1.0 100.0 
+~/bin/LDhelmet_v1.6/ldhelmet table_gen --num_threads 12 -c /mnt/gluster/home/sonal.singhal1/LTF/analysis/LDhelmet/LTF_chrZ.conf -o /mnt/gluster/home/sonal.singhal1/LTF/analysis/LDhelmet/LTF_chrZ.gen -t 0.00271 -r 0.0 0.1 10.0 1.0 100.0 
+~/bin/LDhelmet_v1.6/ldhelmet table_gen --num_threads 12 -c /mnt/gluster/home/sonal.singhal1/ZF/analysis/LDhelmet/ZF_chrZ.conf -o /mnt/gluster/home/sonal.singhal1/ZF/analysis/LDhelmet/ZF_chrZ.gen -t 0.00313 -r 0.0 0.1 10.0 1.0 100.0 
+~/bin/LDhelmet_v1.6/ldhelmet pade --num_threads 12 -c /mnt/gluster/home/sonal.singhal1/LTF/analysis/LDhelmet/LTF_auto.conf -o /mnt/gluster/home/sonal.singhal1/LTF/analysis/LDhelmet/LTF_auto.pade -t 0.00472
+~/bin/LDhelmet_v1.6/ldhelmet pade --num_threads 12 -c /mnt/gluster/home/sonal.singhal1/ZF/analysis/LDhelmet/ZF_auto.conf -o /mnt/gluster/home/sonal.singhal1/ZF/analysis/LDhelmet/ZF_auto.pade -t 0.00675 
+~/bin/LDhelmet_v1.6/ldhelmet pade --num_threads 12 -c /mnt/gluster/home/sonal.singhal1/LTF/analysis/LDhelmet/LTF_chrZ.conf -o /mnt/gluster/home/sonal.singhal1/LTF/analysis/LDhelmet/LTF_chrZ.pade -t 0.00271
+~/bin/LDhelmet_v1.6/ldhelmet pade --num_threads 12 -c /mnt/gluster/home/sonal.singhal1/ZF/analysis/LDhelmet/ZF_chrZ.conf -o /mnt/gluster/home/sonal.singhal1/ZF/analysis/LDhelmet/ZF_chrZ.pade -t 0.00313 
+\end{verbatim}
+\item Started LDhelmet running again with new haplotypes. Need to do for bpen5 for ZF first, and then for LTF.
+\item Checking how sensitive seqLDhot is to background rho, so rerunning each inferred hotspot at background rho of 1.5x and 0.5x respectively, and seeing how that affects seqLDhot's ability to find the hotspot.
+\item Checking how sensitive PHASE is to where PHASE is told where the hotspot is. Checked to see if PHASE can find the hotspots that SeqLDhot found, but that PHASE didn't, when given the "right" hotspot coordinates inferred from SeqLDhot: \verb+find_hotspots_phase_check_sensitivity.py+.
+\item Had to reinfer graphs for phase uncertainty for hotspots. Need to start this from the beginning due to a serious error in the phase uncertainty for hotspot script. Will redo this with the new haplotypes and the new hotspots.
+\item Recalculated switch error rates and plotted in \verb+hotspot_issues.ipynb+. The new switch error rates are much lower.
+\item I looked into the inversion calls that Daniel had made in \verb+zebrafinch/analysis/inversions/+ and didn't find much of anything. I honestly don't trust his results, because so many of the inversions were so large and were shared between the species. Given a subset of more trustworthy results, I didn't find many patterns except that inversion breakpoints tended to be in areas of low and high recombination. While you'd expect breakpoints to be in areas of high recombination, I don't know why there would be more in low recombination.
+\item I generated the SFS for chrZ and autosomes, separately using \verb+1D_sfs.py+. Autosomal SFS looked fine, but the chrZ SFS (although having pretty much the same shape as the autosomal SFS) had some wonky spikes, no obvious reason why. I looked at the subset of sites that fell into the wonky spike category (it was really just one category in each SFS because of the mirroring of the SFS), and there was nothing wrong with them. I worry that it might be because of the filtering I did in recoding for sex.
+\item Running PSMC for chrZ, males only. Saw no need to randomly combine haploid chrZ, so didn't. Window size 10. 
+\item Started to look at where the PAR is. Ellen identified the zebrafinch PAR on 1 - 450000. The flycatcher PAR -- first contig is definitely on the same chromosome from 10K to 300K, but the second contig maps largely to chr24 - 100K - 600K. To confirm that chr24 might be the PAR, will need to look at chicken results. Also, while files were mapped to the chrZ\_random, no SNPs were called on them, so analyzing the PAR would require doing SNP calling again.
+\item SeqLDhot sensitivity: SeqLDhot is not that sensitive to the background rho rate being inferred incorrectly.
+\end{enumerate}
+
+\labday{Week of 2 February  - 6 February 2015}
+\begin{enumerate}
+\item Ran PSMC for chrZ -- looks super weird in that it is more noisy, but more or less, follows autosomes.
+\item This lead me to look at patterns of variation on the Z chromosome (and all the other chromosomes), and I found that the Zchromosome has a very unusual pattern where the telomeres are super differentiated and the middle of the chromosome is hardly differentiated at all. Maybe this is because of the inversions?
+\item I found hotspots for LTF and ZF, using all the ranges of block sizes and flank sizes, though we are only going to pursue the most conservative hotspots found with block 2000 and flank 40000.
+\item I got samples from graphs for phasing uncertainty, which I won't be able to do until I know what the hotspots are.
+\item Check how sensitive PHASE is to location of hotspot: To see how sensitive PHASE is to its "greatest" weakness, that the hotspot location has to be given as a known, I ran PHASE at 415 hotspots that had been previously validated using SequenceLDhot but weren't validated using PHASE. And, rather than giving the hotspot coordinates inferred by LDhelmet, I used those given by SequenceLDhot. 61 (at cutoff 10) passed and 211 out of 415 (at cutoff 5) passed. This is more than what passed the first time (0). Further, the inferred rho is 1.28x (mean) - 1.32x (median) higher than what we gave. These results suggest we might be under inferring the background rate, but our SeqLDhot results suggest that even if when validated hotspots are run at a background rho 1.5x higher than inferred, we still capture many of the hotspots. 121 out of 415 have a re-inferred background rho as being greater than 1.5. It is possible that when the background rho is much higher that it will have a big effect. All these results suggest that the discrepancy between PHASE and SeqLDhot is partially due to PHASE being underpowered and partially because hotspot location needs to be specified, \verb+find_hotspots_phase_check_sensitivity_parse.py+.
+\item one of the PAR contigs from flycatcher does match mainly to chr24. Getting data from Qi Zhou at UC Berkeley to look at PAR in ground finch. Ground finch PAR is in scaffold 143. Good match in genes (at least 9, but probably more -- annotation qualities are quite poor) across all 3 species (\verb+PAR_compare_genelists.py+). The chr24 seems to be an issue with the quality of the flycatcher genome. So, can trust our PAR.
+\item Created seqldhot files to run. Because I am looking at heat > 5, there are many more files to run. 7K each. It will take 2 weeks or so.
+\item In how much of the genome do we have rho values (0.001 - 0.6) in which we can actually infer hotspots? (in \verb+sequence_length_rho.py+).
+\begin{table}[h]
+\begin{tabular}{cc}
+\hline
+type & length \\
+\hline
+total genome length & 1021462940 \\
+long chr length & 929937698 (91\%) \\
+ZF & 733641215 (78.9\% or 71.8\%) \\
+LTF & 825865157 (88.8\% or 80.9\%) \\
+shared in both ZF and LTF & 699449179 (75.2\% or 68.5\%) \\
+\hline
+\end{tabular}
+\end{table}
+\end{enumerate}
+
 \end{document}
