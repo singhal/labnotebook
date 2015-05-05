@@ -251,8 +251,6 @@ Anyways, I am going to go from $\theta$ estimates to $N_e$ using Watterson's the
 \experiment{data_management}
 I lost most of the day to moving files around. I have ~1 TB of space on the \texttt{/mnt/lustre/} drive and ~1 TB of space on the \texttt{/mnt/glustre/} drive. That should be enough for everything, though it is definitely not ideal to have things spread out. \\
 
-This is getting super annoying. This lab notebook is also starting to sound like a teenage diary.
-
 \experiment{phasing}
 I started my phasing experiments. There are four main ways that I could phase. 
 \begin{enumerate}
@@ -490,7 +488,7 @@ And oh -- I figured out why the chr26 for ZF family kept failing because of a mi
 \labday{Tuesday, 5 August 2014 -- Friday, 15 August 2014}
 Very few updates here because I had to backtrack a lot over the last two weeks. These two weeks were essentially dealing with my concerns that the switch error rate inferred between family-informed phasing and read-backed phasing was exceptionally high -- it could be as high as 30\% to 40\% across any given chromosome. This clearly would not do, as the basis for recombination estimates revolves around inferred breakpoints between haplotypes. 
 
-I met with Molly, and she was skeptical about everything, including:
+I met with Molly, and I had to revise things:
 \begin{enumerate}
 \item Using human-specific values for $\rho$ and $N_e$; she advised using the bird specific values (which are different from the ones I inferred). Although that still wouldn't work because of the overflow errors, I did increase the rho value to be 0.0008, or double the default. This makes it more in line with the values of $c$ reported in the literature, assuming the default $N_e$ in the program? But Molly said it should be 10$\times$ greater? I am not sure why or how.
 \item The percentage of heterozygous sites covered by PIRs. I don't quite get this concern, though I suppose it would be easy enough to test empirically.
@@ -828,13 +826,13 @@ I worked on MSMC again, make files again with fewer haplotypes (4) and will run 
 \item MSMC is the wrong program for my data. I get the sense that it is meant to capture more recent population history, but frankly, I do not understand the methods enough to be sure.
 \end{enumerate}
 Anyways, despite all this uncertainty, I went ahead and generated multiple MSMC files for each SNP set that worked, so that I can create effective bootstraps, both across comparable SNP sets and across different SNP sets. If things aren't congruent, I am not sure what to do...
-\item CoalHMM seemed like a good program to look across the three lineages and figure out how they are related, but Molly said no ... after I wasted a ton of time getting the file made and spending tons of time trying to install it. I wonder why it is not good. Is it because it isn't out of the power trifecta?
+\item CoalHMM seemed like a good program to look across the three lineages and figure out how they are related, but Molly advised otherwise.
 \item TreeMix: I started running the 4 pop admixture test, to see if any of our populations are admixed. It is running very very slowly. The command I used was \verb+/mnt/lustre/home/sonal.singhal1/bin/treemix-1.12/fourpop -i /mnt/gluster/home/sonal.singhal1/ZF/analysis/treemix/treemix_auts_inclDBF.txt.gz -k 500+. I think the reason that it is so slow is because I have two many variants for that k. Maybe I should have increased k? If it doesn't finish in the next few days, I will.
 \item SNAPP: I spent more time than I would like to admit trying to get SNAPP files created. There were a number of problems, mainly that the BEAST manual is pretty vague about the input format. It turns out that FASTA files are not supported, that 0/1/2 format for alleles is not supported, and it isn't clear that IUPAC ambiguity codes are interpreted as one would hope. So, I created a gazillion and a half files, but I think that I now have the right script (\verb+make_snapp_files.py+) and the right file that will give the results I expect. I ended up subsampling both at the haplotype and the locus level because of everyone's warnings that this program is really really slow.
 \item Admixture: I created the input files for Admixture, both for all 4 lineages and just for LTF. I tried a number of subsampling regimes, but I ultimately landed upon a sampling scheme that made sense and gave about 300K SNPs. Along the way, I did it removing singletons, but Molly said no, so I am redoing the analyses to not include singletons. The results (on my personal computer under \verb+/Users/singhal/zebrafinch/analysis/admixture/+) didn't make too much sense, because the LTFs didn't break up that cleanly. I guess they really aren't that different, especially when you don't include the Z chromosome. Anyways, those analyses are running again, and I don't know about how to choose K with this program -- people do not seem to trust the CV approach. I am using the scripts \verb+make_admixture_files.py+ and \verb+make_admixture_files_LTF.py+.
 \item Simulations: This was the most frustrating thing. Molly didn't like the approach I used for the simulations to identify the right block penalty, so I ended up using the simulation script I wrote for identifying power to detect hotspots instead. This was a non-trivial amount of work, because I started with one approach (where just one hotspot was in the sequence), but it didn't work well because it created way too many files to analyze and it was impossible to identify the maximum number of configurations ... and there was no way that I was going to create a likelihood and pade file for each file. So, instead, I put a number of hotspots into each sequence file, and I am going to evaluate LDhelmet's ability to find hotspots on these metrics: false positive, false negative, rate, accuracy. I will identify the right bpen that way for finding hotspots. This might not be the right bpen for getting the recombination map, so I think that I will end up running LDhelmet at two different bpens. I think that I will end up getting the low bpen is the best, and then I will have too much noise. Oh well.
 \item Dadi: This is going to be the program that I will use to infer lineage divergence. Annoyingly, they have changed the scripts since I used it last, so I will have to rewrite all my PhD scripts. Installing it was tricky -- turns out I should put my Python libraries in the .local drive in my home drive on the cluster. Wrote a script to make the dadi files called \verb+make_dadi_files.py+
-\item Meetings with Molly: Sucked. Have to redo simulations and then get the analyses started again. Will be giving lab meeting in November. Alva is still going to work on these data for a while. Still not clear what I own versus what Ellen owns. The PAR stuff is legit, like I thought, and like they didn't think. The guy who was going to run LDhat disappeared.
+\item Meetings with Molly: Have to redo simulations and then get the analyses started again. Will be giving lab meeting in November. The PAR stuff is legit, like I thought, and like they didn't think. The guy who was going to run LDhat disappeared.
 \item Other: Got Platypus and GATK implemented for Encelia, but need to make sure that GATK is working. Did a paper review for Current Zoology. Prepared for lab meeting on Monday. Read a lot of papers. Spent half of Wednesday sick.
 \end{itemize}
 
@@ -880,7 +878,6 @@ I also made graphs, which are in \verb+hotspot_power.ipynb+ on my local disk. \\
 I am also scaling up the power analyses (only to evaluate with bpen=5) at Molly's bequest.
 
 \item Dadi: The script crashed due to memory, so I reran it and then combined files. Then, I noticed that a given triplet will often have two mutations, which seemed problematic. So, I wrote a short script \verb+prune_dadi.py+ that prunes the dadi files so that any mutations less than 3 bp apart are discarded.
-\item Meeting with Molly: Sucked even more than last time! Have to redo my power simulations. She will support me (modestly) for the NIH. Seemed semi-enthusiastic about the Columbia Science Fellows.
 \item LDhelmet: Came up with good priors for recombination rate based on the Ellegren data, and started rerunning the files with block penalty of 5 and 100 for all the data. Am using fewer iterations of the MCMC chain so that they will finish some day.
 \item Other: Read a few papers and finally came up with some hypotheses for my work. Not so clear that I will get funding, though. Lost Tuesday afternoon and most of Wednesday to finding new housing after current roommate turned out to be crazy.
 \end{itemize}
@@ -1142,12 +1139,12 @@ theta: 0.00157
 \item Had to make ZF chromosome 2 haplotypes again, failed for some reason.
 \item Ran post-to-text for chrZ LDhelmet for both species.
 \item Found hotspots on Z chromosome for ZF; no modifications to script.
-\item Estimated that mu for ZF is about 2.7e-9.
+\item Estimated that mu for ZF is about 6.4e-10.
 \begin{enumerate}
-	\item theta of long chromosomes = 0.0119
+	\item theta of long chromosomes = 0.0131
 	\item median c of long chromosomes =  0.1284e-8 (because of 1e6 for Mb and 1e2 because a percentage) (calculated by using \verb+~/scripts/simple_median_c_rate.py+)
 	\item median rho of long chromosomes = 0.02497 (calculated using \verb+simple_summarize_rho_rates.py+)
-	\item $ \frac{\mu}{c} = \frac{\theta}{\rho} = \frac{\theta \cdot c}{\rho}  = \frac{0.0119 \cdot 0.1284 \cdot 10e-8}{0.02497} = 6.12 \cdot 10^{-10}$
+	\item $ \frac{\mu}{c} = \frac{\theta}{\rho} = \frac{\theta \cdot c}{\rho}  = \frac{0.0131 \cdot 0.1284 \cdot 10e-8}{0.02497} = 6.4 \cdot 10^{-10}$
 \end{enumerate}
 \item Smoothed windows for Z chromosome
 \item Fixed seqLDhot script to use VCFs, so it is more flexible. Than ran seqLDhot for ZF for all hotspots. Will start LTF and DBF soon.
@@ -1178,7 +1175,7 @@ Here, the z-stat is 0.98 (distance from 0 means worse fit), which is non-signifi
 \item BAH. Messed up mu calculations. corrected. The new estimate is $6.1 \cdot 10^{-10}$, which is really low. It gives a $N_e$ estimate that makes sense, but ...
 \item Started redoing the recombination graphs. Too many of these chromosomes don't make it to 50 cM, which is what you'd expect if you get 2 crossovers per chromosome in every individual, which is what they argue you need for proper segregation during meiosis. It is quite possible that I have misestimated Ne, but, I also think that the mutation rate between ZF and LTF would have to be quite different for this to work for both. Maybe I misestimated $\theta$ for LTF? How could that be?
 \item Started making files for hotspot power simulations. These needed to be scaled up, so am doing enough simulations per parameter set to get 100 hotspots.
-\item Created PHASE files for all hotspots -- will check if PHASE does better than seqldhot. Am allowing PHASE to rephase and also giving PHASE known phases. Note: I am running MR2, which is different from MR1, because you have to tell it where the hotspot is. This worries me because I think that is an imprecise thing, but so it goes. Having PHASE identify the phasing is going SUPER slowly, so I think that I won't do that for LTF, nor will I do it for more than a few of these hotspots. Will do it just to appease Molly. Will need to run each hotspot 3 times though, because that's what the 
+\item Created PHASE files for all hotspots -- will check if PHASE does better than seqldhot. Am allowing PHASE to rephase and also giving PHASE known phases. Note: I am running MR2, which is different from MR1, because you have to tell it where the hotspot is. This worries me because I think that is an imprecise thing, but so it goes. Having PHASE identify the phasing is going SUPER slowly, so I think that I won't do that for LTF, nor will I do it for more than a few of these hotspots. Will need to run each hotspot 3 times though, because that's what the 
 \item Substitution * clock rate gives total evoutionary rate, so don't try to estimate both, because things become non-identifiable. This is why my new BEAST runs failed. To fix it, I need to not estimate subsitution rates, and just allow clock rates to vary. I should probably not have one clock rate for all of the data like I did before. And I should probably allow multiple substitution models across the sites, but then there will be way too many parameters...
 \end{enumerate}
 
@@ -1266,7 +1263,6 @@ wrong_female_geno: 154541
 
 \labday{Week of 15 December - 19 December 2014}
 \begin{enumerate}
-\item Gave lab meeting. Sucked. Whatever. 
 \item Fixed many figures based on lab feedback.
 \item Identified cold spots for Ellen. Turns out these need to be matched for base composition, which I haven't done yet. Script is \verb+identify_coldspots.py+.
 \begin{verbatim}
@@ -1425,5 +1421,154 @@ shared in both ZF and LTF & 699449179 (75.2\% or 68.5\%) \\
 \end{tabular}
 \end{table}
 \end{enumerate}
+
+\labday{Week of 9 February  - 13 February 2015}
+\begin{enumerate}
+\item Worked on UC Mexus and Gurley grants.
+\item Fixed methods.
+\item Figured out details for shared hotspot simulations
+\begin{itemize}
+\item Average distance between shared hotspots is 300 bp, so I think assuming same exact coordinates is fair.
+\item In zebrafinch, sequence is pretty evenly distributed among (0.001, 0.01], (0.01, 0.1], (0.1, 0.5], (0.5, 0.8], so it is fair to simulate the same amount of sequence at each.
+\item ZF rho tends to be 2x greater than LTF. Should account for this.
+\item SequenceLDhot average lambda is 10.
+\item LDhelmet average lambda is 15.
+\item LDhelmet to sequenceLDhot ratio for lambda is 1.5.
+\item Simulated to LDhelmet ratio for lambda is 0.5, so worth nothing that the 15 is an underestimate. Maybe simulate hotspots of 20, 40, 60.
+\item Mean difference in hotspot heats is 1, so seems safe to assume same heat.
+\item This would give a total of 240 simulations of 1 Mb each, each with 12 hotspots.
+\end{itemize}
+\item Fixed chrZ for sequenceLDhot validations. Continued running the rest of them.
+\item Shared ancestral polymorphism: shared polymorphsims are highly correlated in frequency ($r^2$=0.68)
+\begin{enumerate}
+\item percentage SNPs shared out of LTF: 0.114
+\item percentage SNPs shared out of ZF: 0.063
+\item percentage SNPs shared out of denominator: 0.004
+\item percentage SNPs of LTF out of denominator: 0.032
+\item percentage SNPs of ZF out of denominator: 0.059
+\end{enumerate}
+\end{enumerate}
+
+\labday{Week of 16 February  - 27 February 2015}
+\begin{enumerate}
+\item Didn't take many notes these two weeks.
+\item Worked on Gurley and UC Mexus, applied for jobs.
+\item Did shared hotspot simulations. As expected, the number of shared hotspots found depends on the heat of hotspots and the background rho.
+\item The simulations were more heuristic, but one thing that I did do to make them more realistic is that recombination rates in LTF were set to be half as low as they were in ZF, which is about what we see.
+\item  0.0056 - LTF theta in simulations
+\item  Started to get PAR ready. This was a lot of tedious work in GATK. \verb+/home/shyamg/bin/java Xmx4g -jar /home/sonal.singhal1/bin/GenomeAnalysisTK.jar -T UnifiedGenotyper -R /mnt/gluster/home/sonal.singhal1/reference/Zfinch.fa <-I BAM LIST> -L chrZ_random -glm SNP -mbq 20 -hets 0.006 -out_mode EMIT_ALL_SITES -o gatk.ug.all.chr1.raw.snps.indels.vcf -nct 4+
+\end{enumerate}
+
+\labday{Week of 2 March  - 6 March 2015}
+\begin{enumerate}
+\item Finished work on getting ancestral chromosome for PAR.
+\begin{verbatim}
+/home/shyamg/bin/java -Xmx5g -jar ~/bin/GenomeAnalysisTK.jar -T VariantRecalibrator -R /mnt/gluster/home/sonal.singhal1/reference/Zfinch.fa -input /mnt/gluster/home/sonal.singhal1/PAR/zf/gatk.ug.unrel_zf.chrZ_random.raw.snps.vcf.gz -resource:gatkugunrelated_cortexunrelated_intersection,known=true,training=true,truth=true,prior=10.0 /mnt/gluster/home/sonal.singhal1/PAR/zf/unrel_zf.gatk_cortex_insersection.trusted_snps.vcf.gz -an QD -an HaplotypeScore -an MQRankSum -an ReadPosRankSum -an FS -an MQ -an DP -recalFile /mnt/gluster/home/sonal.singhal1/PAR/zf/gatk.ug.unrelzf.recal -tranchesFile /mnt/gluster/home/sonal.singhal1/PAR/zf/gatk.ug.unrelzf.tranches -rscriptFile /mnt/gluster/home/sonal.singhal1/PAR/zf/gatk.ug.unrelzf.VQSR.plots.R -nt 8
+\end{verbatim}
+\item Fixed figures.
+\item Had to rerun chr5 and chr6 LDhelmet for ZF because there was an error in creating the files, adn they were cutoff.
+\item Made figures for Molly, which are a still bit out of date because they use the old maps, but this means I wrote most of the scripts that I will need for when I rerun things later.
+* hotspot finder 
+	-- figure out way to handle hotspots close to each other (make this more about hotspots found and then match them -- and, in this process, also winnow hotspots)
+* compared to Jeff
+* compared to Ellegren
+* found 3955 hotspots in ZF, 5033 hotspots in LTF, and 73\% of them are shared between the two species
+* organized data for ellen
+\begin{verbatim}
+COLDSPOTS
+ZF: /mnt/gluster/home/sonal.singhal1/ZF/analysis/hotspots/ZF.ldhelmet_unvalidated_coldspots.csv
+LTF: /mnt/gluster/home/sonal.singhal1/LTF/analysis/hotspots/LTF.ldhelmet_unvalidated_coldspots.csv
+
+HOTSPOTS
+* shared indicates if the hotspot is shared between the two species, which means there is a hotspot within 3 kb of this one in the other species
+* percentile breaks the hotspots into four categories evenly split by hotspot heat
+ZF: /mnt/gluster/home/sonal.singhal1/ZF/analysis/hotspots/ZF.seqldhot_hotspots.heat5.csv
+LTF: /mnt/gluster/home/sonal.singhal1/LTF/analysis/hotspots/LTF.seqldhot_hotspots.heat5.csv
+
+ANCESTRAL SEQUENCE (includes PAR)
+/mnt/gluster/home/sonal.singhal1/reference/ancestral_genome.fa
+
+VCF FILES
+ZF: /mnt/gluster/home/sonal.singhal1/ZF/after_vqsr/by_chr/unrel_vcf/*phased.vqsr2.vcf.gz
+LTF: /mnt/gluster/home/sonal.singhal1/LTF/after_vqsr/by_chr/*phased.vqsr2.vcf.gz
+DBF: /mnt/gluster/home/sonal.singhal1/DBF/after_vqsr/by_chr/*filtered.coverage.vqsr.vcf.gz 
+
+VCF FILES FOR PAR
+ZF: /mnt/gluster/home/sonal.singhal1/PAR/zf/gatk.ug.unrel_zf.chrZ_random.snps.filtered.vqsr.vcf.gz
+LTF: /mnt/gluster/home/sonal.singhal1/PAR/ltf/gatk.ug.ltf.chrZ_random.snps.filtered.vqsr.vcf.gz
+DBF: /mnt/gluster/home/sonal.singhal1/DBF/after_vqsr/by_chr/gatk.ug.dbf.chrZ_random.filtered.coverage.vqsr.vcf.gz
+\end{verbatim}
+* cannot infer recombination maps for chrLG5 for ZF, chr16 for LTF because they have two few SNPS (chrLG5 has 9; chr16 has 2)
+\end{enumerate}
+
+\labday{Week of 9 March  - 13 March 2015}
+\begin{enumerate}
+\item finished massive redos!
+\item finished cpg graphing
+\item plotting the distribution of hotspots across the chromosomes -- very spotty
+\item for ZF: Hotspots are 0.012 of all length and 0.017 of all recombination. for LTF: Hotspots are 0.016 of all length and 0.071 of all recombination.
+\item phasing uncertainty: out of 517 hotspots on chr1, tested 506 of them at (at least) one another phasing for the hotspot. out of the 1475 alternative phasing, 1474 had hotspots.
+\begin{itemize}
+\item the mean coefficient of variation for start site is: 6.38360141785e-06
+\item the mean coefficient of variation for hotspot length is: 0.101448801153
+\item the mean coefficient of variation for hotspot heat is: 0.133201270021
+\end{itemize}
+Given all this, I think we can say that phasing uncertainty seems to be a pretty small part of the uncertainty here.
+\end{enumerate}
+
+\begin{itemize}
+\item 219491 / 62069206 (Mendelian error rate, indels + snps)
+\item have to redo chromosome Z error rate, just look at it w.r.t to sites that have a het
+	\begin{itemize}
+	\item molly wants us to report it as number of sites with a het / total number of sites genotyped
+	\item and just look at SNPs
+	\item zf had 54450385 sites, of which 28115 had an error (0.051\%)
+		\begin{itemize}
+			\item all SNPs: 722750
+			\item wrong SNPs: 28115
+			\item filtered SNPs: 10334
+			\item all female SNP geno: 7227500
+			\item wrong female SNP geno: 104066
+		\end{itemize}
+	\item ltf had 58868727 sites, of which 41290 had an error ()
+		\begin{itemize}
+			\item all SNPs: 1650728
+			\item wrong SNPs: 41290
+			\item filtered SNPs: 15587
+			\item all female SNP geno: 13205824
+			\item wrong female SNP geno: 131747
+		\end{itemize}
+\end{itemize}
+\end{itemize}
+
+\begin{verbatim}
+chr Ellcm	OurCM
+chr1 70.3 55.1268187129
+chr1A 90.8 89.9109868193
+chr2 55.6 56.2446817875
+chr3 69.5 72.5104926548
+chr4 17.5 32.1072820908
+chr4A 44.4 35.2745413143
+chr5 56.6 88.4021601523
+chr6 60.2 71.8777175626
+chr7 41.2 59.5154305825
+chr8 44.0 41.3017121706
+chr9 52.3 58.280188041
+chr10 55.0 74.1160416624
+chr11 33.5 43.9608878505
+chr12 34.8 27.3397992293
+chr13 14.7 17.8216825981
+chr14 46.1 41.0383708824
+chr15 43.8 50.8056057983
+chrZ 29.6 37.1112244603
+\end{verbatim}
+
+\begin{verbatim}
+~/bin/psp-gen -pos /mnt/gluster/home/sonal.singhal1/ZF/analysis/motifs/LTF_hot_1kb_sequences.subset.fa -neg /mnt/gluster/home/sonal.singhal1/ZF/analysis/motifs/LTF_cold_1kb_sequences.subset.fa -revcomp > /mnt/gluster/home/sonal.singhal1/ZF/analysis/motifs/LTF.motifs.psp
+# in order to run meme, need to use a subset of sequences
+~/bin/meme /mnt/gluster/home/sonal.singhal1/ZF/analysis/motifs/LTF_hot_1kb_sequences.subset.fa -psp /mnt/gluster/home/sonal.singhal1/ZF/analysis/motifs/LTF.motifs.psp --oc /mnt/gluster/home/sonal.singhal1/ZF/analysis/motifs/LTF_meme -revcomp -dna -nmotifs 10 -minw 5 -maxw 20
+
+~/bin/dreme -p /mnt/gluster/home/sonal.singhal1/ZF/analysis/motifs/ZF_hot_1kb_sequences.fa -n /mnt/gluster/home/sonal.singhal1/ZF/analysis/motifs/ZF_cold_1kb_sequences.fa -oc /mnt/gluster/home/sonal.singhal1/ZF/analysis/motifs/ZF_dreme/ -png -maxk 10
+\end{verbatim}
 
 \end{document}
