@@ -1541,6 +1541,9 @@ Given all this, I think we can say that phasing uncertainty seems to be a pretty
 \end{itemize}
 \end{itemize}
 
+\labday{Months of April and May}
+\begin{itemize}
+\item Total cM for each chromosome is slightly different between Ellegren and us - in gerneal, we estimate chromosomes to be longer.
 \begin{verbatim}
 chr Ellcm	OurCM
 chr1 70.3 55.1268187129
@@ -1562,7 +1565,7 @@ chr14 46.1 41.0383708824
 chr15 43.8 50.8056057983
 chrZ 29.6 37.1112244603
 \end{verbatim}
-
+\item To run motif finding:
 \begin{verbatim}
 ~/bin/psp-gen -pos /mnt/gluster/home/sonal.singhal1/ZF/analysis/motifs/LTF_hot_1kb_sequences.subset.fa -neg /mnt/gluster/home/sonal.singhal1/ZF/analysis/motifs/LTF_cold_1kb_sequences.subset.fa -revcomp > /mnt/gluster/home/sonal.singhal1/ZF/analysis/motifs/LTF.motifs.psp
 # in order to run meme, need to use a subset of sequences
@@ -1570,5 +1573,120 @@ chrZ 29.6 37.1112244603
 
 ~/bin/dreme -p /mnt/gluster/home/sonal.singhal1/ZF/analysis/motifs/ZF_hot_1kb_sequences.fa -n /mnt/gluster/home/sonal.singhal1/ZF/analysis/motifs/ZF_cold_1kb_sequences.fa -oc /mnt/gluster/home/sonal.singhal1/ZF/analysis/motifs/ZF_dreme/ -png -maxk 10
 \end{verbatim}
+\item Ellen's data on SNP check in that duplicate individual. \verb+duplicate_check_snps_filtered.py+ To follow up, in that earlier callset, there are 33,762,388 autosomal SNPs called that are also in the final data set and 628,256 SNPs called on chrZ that are also in the final data set. 
+\begin{verbatim}
+Autosomes:
+99.78\% concordance (exactly the same genotype call)
+0.01\% have a missing genotype for one of the individuals
+0.20\% have different genotype calls in the two individuals
+
+chrZ (this is a ZW individual)
+99.56\% concordance (exactly the same genotype call)
+0.16\% have a missing genotype for one of the individuals
+0.27\% have different genotype calls in the two individuals.
+\end{verbatim}
+\item Re-estimate mu based on revised mean c; estimated that mu for ZF is about 7e-10.
+\begin{enumerate}
+	\item theta of long chromosomes = 0.0131
+	\item mean c of long chromosomes =  1.068e-8 (because of 1e6 for Mb and 1e2 because a percentage)
+	\item mean rho of long chromosomes = 0.198 (calculated using \verb+simple_summarize_rho_rates.py+)
+	\item $ \frac{\mu}{c} = \frac{\theta}{\rho} = \frac{\theta \cdot c}{\rho}  = \frac{0.0131 \cdot 1.068 \cdot 10e-8}{0.198} = 7 \cdot 10^{-10}$
+\end{enumerate}
+\begin{enumerate}
+	\item theta of long chromosomes = 0.0131
+	\item median c of long chromosomes =  0.133e-8 (because of 1e6 for Mb and 1e2 because a percentage; calculated using to\_get\_rates in ZF comparative figure)
+	\item median rho of long chromosomes = 0.02645 (calculated using \verb+simple_summarize_rho_rates.py+)
+	\item $ \frac{\mu}{c} = \frac{\theta}{\rho} = \frac{\theta \cdot c}{\rho}  = \frac{0.0131 \cdot 0.133 \cdot 10e-8}{0.02465} = 7 \cdot 10^{-10}$
+\end{enumerate}
+\item calculate correlation between chicken and zebrafinch: 0.41 at 1 Mb scale; see recombination\_maps.ipynb
+\item are areas that are different between species more divergent?; no, actually looks to be the opposite
+\item \verb+gc_hotspots_darwin.py+: to look at bGC in Darwin's finches.
+\item Ficedula - just using ficedula albicolis, 72.9\% alignment to zebra finch for 565 million read pairs; \verb+~/bin/samtools-0.1.19/samtools mpileup -I -uf /mnt/gluster/home/sonal.singhal1/reference/taeGut1_60.bamorder.fasta /mnt/gluster/home/sonal.singhal1/ficedula/bams/Ficedula_albicollis.bam | ~/bin/samtools-0.1.19/bcftools/bcftools view -t 0.1 -I -c - > /mnt/gluster/home/sonal.singhal1/ficedula/Ficedula_albicollis.vcf+
+\item hotspot and coldspot matching
+\begin{verbatim}
+ZF hotspots: 3949
+number ditched bc location: 3948
+number ditched bc masking: 0 
+number matched: 3657
+
+ZF coldspots: 31016
+number ditched bc location: 31009
+number ditched bc masking: 0
+
+LTF hotspots: 4933
+number ditched bc location: 4926
+number ditched bc masking: 0 
+number matched: 4734
+
+LTF coldspots: 49741
+number ditched bc location: 49739
+number ditched bc masking: 0
+
+DBF hotspots: 2874
+number ditched bc location: 2867
+number ditched bc masking: 0
+number matched: 2770
+
+Geo hotspots: 2874
+number ditched bc location: 2867
+number ditched bc masking: 1
+number matched: 2763
+
+Ficedula hotspots: 2874
+number ditched bc location: 2867
+number ditched bc masking: 1
+number matched: 2754
+
+ZF 3949
+LTF 4933
+ZF unique 1075
+LTF unique 2059
+shared 2874
+\end{verbatim}
+\item Correlation across genome at 1 Mb scale is 0.86 (big chromosomes only); at 100 kb 0.84; at 10 kb 0.82
+\item fit line to Fig S7 - Molly wanted to know if relationship between rec rate and chromosome length is as linear as seen in humans (Alon 2009) - but not very linear when out of log scale, but still fit ~0.6. In \verb+recombination_maps.ipynb+ but won't make it into the main paper
+\item ltf alignment rates: 6254911873 / 6474818027 (0.966)
+\item zf alignment rates: 5334786588 / 5465357626 (0.976)
+\item db alignment rates: 363027260 / 378408071 (0.959)
+\item concerned that differences in theta in introns vs. exons might be driving different patterns in rho, but doesn't seem it (\verb+hotspot_power.ipynb+): This isn't at all intuitive to me, so let me know what you all think. Decreasing theta but keeping rho the same increases the rho : theta ratio (plotted as the x-axis here), Increasing the rho : theta ratio leads to more accurate estimates of rho (y-axis). And, the bias when the rho : theta ratio decreases is to over-estimate rho. So, in the case of introns and exons, these simulations would suggest (if anything) our rho estimates in introns should be less accurate, and therefore, give us upward biased estimates of rho.
+\item Actually, difference in theta between introns and exons is 2x.
+\begin{verbatim}
+* ZF
+intron length 45360790
+exon length 2059449
+num SS introns 2075135
+num SS exons 42355
+intron theta 0.0109
+exon theta 0.0049
+
+* LTF
+intron length 45360790
+exon length 2059449
+num SS introns 1453141
+num SS exons 33295
+intron theta 0.0038
+exon theta 0.0075
+\end{verbatim}
+\item Got concerned that divergence estimates are such because of read alignment method
+\begin{verbatim}
+makeblastdb -in ZF_reference.fa -dbtype nucl
+
+blastn -query sequences_to_blat.fa -db /mnt/gluster/home/sonal.singhal1/ficedula/Ficedula_albicollis.FicAlb_1.4.dna_rm.nonchromosomal.fa -out test -max_target_seqs 1 -num_alignments 1 -outfmt 6
+
+blastn -query /mnt/gluster/home/sonal.singhal1/Darwin/g_fortis/Geospiza_short.fa -db /mnt/gluster/home/sonal.singhal1/reference/ZF_reference.fa -out /mnt/gluster/home/sonal.singhal1/Darwin/g_fortis/gfortis.zebrafinch.blastn.out -max_target_seqs 1 -num_alignments 1 -outfmt 6 -num_threads 8
+
+blastn -query /mnt/gluster/home/sonal.singhal1/ficedula/Ficedula_short.fa -db /mnt/gluster/home/sonal.singhal1/reference/ZF_reference.fa -out /mnt/gluster/home/sonal.singhal1/ficedula/ficedula.zebrafinch.blastn.out -max_target_seqs 1 -num_alignments 1 -outfmt 6 -num_threads 8
+
+echo "tba '((zebrafinch geospiza) ficedula)' *.*.maf tba.maf >& tba.log" | qsub -l h_vmem=5g -cwd -V -j y -N 'tba6'
+\end{verbatim}
+Decided that I don't think how homology is done across ZF, LTF, DBF, Geospiza, and Ficedula matters that much; see divergence.xlsx
+\item mutation rate for *BEAST: 0.0021 - 0.00245; "The substitution rate in the site model panel is multiplied with the clock rate to get a rate for each branch. If there is no strong prior on the substitution rate, then clock and substitution rate are unidentifiable, so that would explain the lack of convergence."
+\item gcstar - profiling - doesn't look like anything is bad with GC* despite worries. they are different for different species.
+\item finally looked at dn/ds - only 196 genes evolving under evidence for positive selection, but FDR would have 652 - so I am dubious of these results
+\end{itemize}
 
 \end{document}
+
+
+
+
